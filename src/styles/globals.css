@@ -1,0 +1,235 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Frappe Light Theme Colors */
+  --bg-color: #ffffff;
+  --fg-color: #1a1a1a;
+  --card-bg: #ffffff;
+  --navbar-bg: #ffffff;
+  --sidebar-bg: #f4f5f7;
+  --surface-menu-bar: #ffffff;
+
+  --text-color: #1a1a1a;
+  --heading-color: #111111;
+  --text-muted: #6b7280;
+  --text-light: #374151;
+  --text-on-gray: #4b5563;
+
+  --border-color: #e5e7eb;
+  --sidebar-border-color: #e5e7eb;
+  --divider-color: #f3f4f6;
+  --table-border-color: #e5e7eb;
+
+  --sidebar-hover-color: #e5e7eb;
+  --sidebar-active-color: #d1d5db;
+  --sidebar-select-color: #e5e7eb;
+
+  --surface-gray-1: #f9fafb;
+  --surface-gray-2: #f3f4f6;
+  --surface-gray-3: #e5e7eb;
+  --surface-gray-4: #d1d5db;
+  --surface-selected: #e5e7eb;
+
+  --control-bg: #ffffff;
+  --btn-default-bg: #f3f4f6;
+  --btn-default-hover-bg: #e5e7eb;
+  --btn-primary: #0289f7;
+
+  --blue-500: #0289f7;
+  --blue-600: #007be0;
+  --color-active-icon: #388AE5;
+  --ink-blue-3: #5aaef2;
+  --surface-blue-1: #eff6ff;
+  --surface-blue-2: #dbeafe;
+
+  --icon-stroke: #374151;
+  --icon-fill-bg: #ffffff;
+
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  --scrollbar-thumb-color: #d1d5db;
+  --scrollbar-track-color: #f3f4f6;
+
+  --success: #28a745;
+  --danger: #e03636;
+  --warning: #ffc107;
+  --info: #17a2b8;
+
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans",
+    "Helvetica Neue", sans-serif;
+}
+
+body {
+  font-family: var(--font-family);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 17px !important;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track-color); }
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gray-500);
+}
+
+/* ========================================================= */
+/* OVERRIDE HARDCODED REACT INLINE STYLES FOR LIGHT THEME    */
+/* ========================================================= */
+
+/* Sidebar */
+[style*="width: 240px"], [style*="width:240px"],
+[style*="width: '240px'"] {
+    background: #f4f5f7 !important;
+    background-color: #f4f5f7 !important;
+}
+
+/* Top Navbar / Dark Headers (#000000) */
+[style*="background: rgb(0, 0, 0)"], [style*="background-color: rgb(0, 0, 0)"],
+[style*="background: #000000"], [style*="background-color: #000000"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+}
+
+/* Main Backgrounds (#0f0f0f, #0a0a0a, #171717, #1a1a1a, #232323, #141414) -> White */
+[style*="background: rgb(15, 15, 15)"], [style*="background-color: rgb(15, 15, 15)"],
+[style*="background: #0f0f0f"], [style*="background-color: #0f0f0f"],
+[style*="background: rgb(10, 10, 10)"], [style*="background-color: rgb(10, 10, 10)"],
+[style*="background: #0a0a0a"], [style*="background-color: #0a0a0a"],
+[style*="background: rgb(23, 23, 23)"], [style*="background-color: rgb(23, 23, 23)"],
+[style*="background: #171717"], [style*="background-color: #171717"],
+[style*="background: rgb(26, 26, 26)"], [style*="background-color: rgb(26, 26, 26)"],
+[style*="background: #1a1a1a"], [style*="background-color: #1a1a1a"],
+[style*="background: rgb(35, 35, 35)"], [style*="background-color: rgb(35, 35, 35)"],
+[style*="background: #232323"], [style*="background-color: #232323"],
+[style*="background: rgb(20, 20, 20)"], [style*="background-color: rgb(20, 20, 20)"],
+[style*="background: #141414"], [style*="background-color: #141414"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+}
+
+
+/* Row Hovers vs Primary Buttons (#111111 / rgb(17, 17, 17)) */
+div[style*="background: rgb(17, 17, 17)"], div[style*="background-color: rgb(17, 17, 17)"],
+div[style*="background: #111111"], div[style*="background-color: #111111"] {
+    background: #f9fafb !important;
+    background-color: #f9fafb !important;
+}
+
+button[style*="background: rgb(17, 17, 17)"], button[style*="background-color: rgb(17, 17, 17)"],
+button[style*="background: #111111"], button[style*="background-color: #111111"] {
+    background: #0289f7 !important;
+    background-color: #0289f7 !important;
+    color: #ffffff !important;
+}
+
+/* Button & Active Item Backgrounds (#1c1c1c -> #f3f4f6, #2b2b2b -> #e5e7eb) */
+[style*="background: rgb(28, 28, 28)"], [style*="background-color: rgb(28, 28, 28)"],
+[style*="background: #1c1c1c"], [style*="background-color: #1c1c1c"] {
+    background: #f3f4f6 !important;
+    background-color: #f3f4f6 !important;
+}
+
+[style*="background: rgb(43, 43, 43)"], [style*="background-color: rgb(43, 43, 43)"],
+[style*="background: #2b2b2b"], [style*="background-color: #2b2b2b"] {
+    background: #e5e7eb !important;
+    background-color: #e5e7eb !important;
+}
+
+/* STATUS BADGES OVERRIDES FOR LIGHT THEME */
+/* Dark Blue #0e2037 (rgb 14 32 55) */
+[style*="background: rgb(14, 32, 55)"], [style*="background-color: rgb(14, 32, 55)"] { background: #eff6ff !important; background-color: #eff6ff !important; }
+[style*="color: rgb(90, 174, 242)"] { color: #1d4ed8 !important; }
+[style*="background: rgb(90, 174, 242)"], [style*="background-color: rgb(90, 174, 242)"] { background: #1d4ed8 !important; background-color: #1d4ed8 !important; }
+
+/* Dark Brown #371e06 (rgb 55 30 6) */
+[style*="background: rgb(55, 30, 6)"], [style*="background-color: rgb(55, 30, 6)"] { background: #fff7ed !important; background-color: #fff7ed !important; }
+[style*="color: rgb(231, 153, 19)"] { color: #b45309 !important; }
+[style*="background: rgb(231, 153, 19)"], [style*="background-color: rgb(231, 153, 19)"] { background: #b45309 !important; background-color: #b45309 !important; }
+
+/* Dark Purple #2d1a4a (rgb 45 26 74) */
+[style*="background: rgb(45, 26, 74)"], [style*="background-color: rgb(45, 26, 74)"] { background: #faf5ff !important; background-color: #faf5ff !important; }
+[style*="color: rgb(156, 69, 227)"] { color: #7e22ce !important; }
+[style*="background: rgb(156, 69, 227)"], [style*="background-color: rgb(156, 69, 227)"] { background: #7e22ce !important; background-color: #7e22ce !important; }
+
+/* Dark Green #0b2e1c (rgb 11 46 28) */
+[style*="background: rgb(11, 46, 28)"], [style*="background-color: rgb(11, 46, 28)"] { background: #f0fdf4 !important; background-color: #f0fdf4 !important; }
+[style*="color: rgb(48, 166, 109)"] { color: #15803d !important; }
+[style*="background: rgb(48, 166, 109)"], [style*="background-color: rgb(48, 166, 109)"] { background: #15803d !important; background-color: #15803d !important; }
+
+/* Dark Emerald #173b2c (rgb 23 59 44) */
+[style*="background: rgb(23, 59, 44)"], [style*="background-color: rgb(23, 59, 44)"] { background: #ecfdf5 !important; background-color: #ecfdf5 !important; }
+[style*="color: rgb(40, 167, 69)"] { color: #166534 !important; }
+[style*="background: rgb(40, 167, 69)"], [style*="background-color: rgb(40, 167, 69)"] { background: #166534 !important; background-color: #166534 !important; }
+
+/* Dark Red #361515 (rgb 54 21 21) */
+[style*="background: rgb(54, 21, 21)"], [style*="background-color: rgb(54, 21, 21)"] { background: #fef2f2 !important; background-color: #fef2f2 !important; }
+[style*="color: rgb(224, 54, 54)"] { color: #b91c1c !important; }
+[style*="background: rgb(224, 54, 54)"], [style*="background-color: rgb(224, 54, 54)"] { background: #b91c1c !important; background-color: #b91c1c !important; }
+
+/* Dark Gray Badge (#1c1c1c / #424242) */
+[style*="color: rgb(66, 66, 66)"] { color: #6b7280 !important; }
+[style*="background: rgb(66, 66, 66)"], [style*="background-color: rgb(66, 66, 66)"] { background: #6b7280 !important; background-color: #6b7280 !important; }
+
+
+/* Text Colors */
+[style*="color: rgb(248, 248, 248)"], [style*="color: #f8f8f8"],
+[style*="color: rgb(226, 226, 226)"], [style*="color: #e2e2e2"] {
+    color: #1a1a1a !important;
+}
+
+[style*="color: rgb(175, 175, 175)"], [style*="color: #afafaf"],
+[style*="color: rgb(199, 199, 199)"], [style*="color: #c7c7c7"],
+[style*="color: rgb(156, 163, 175)"], [style*="color: #9ca3af"],
+[style*="color: rgb(107, 114, 128)"], [style*="color: #6b7280"],
+[style*="color: rgb(124, 124, 124)"], [style*="color: #7c7c7c"] {
+    color: #4b5563 !important;
+}
+
+/* Borders */
+[style*="solid rgb(28, 28, 28)"], [style*="solid #1c1c1c"], [style*="border-color: rgb(28, 28, 28)"], [style*="border-bottom-color: rgb(28, 28, 28)"],
+[style*="solid rgb(35, 35, 35)"], [style*="solid #232323"], [style*="border-color: rgb(35, 35, 35)"], [style*="border-bottom-color: rgb(35, 35, 35)"],
+[style*="solid rgb(43, 43, 43)"], [style*="solid #2b2b2b"], [style*="border-color: rgb(43, 43, 43)"], [style*="border-bottom-color: rgb(43, 43, 43)"],
+[style*="solid rgb(52, 52, 52)"], [style*="solid #343434"], [style*="border-color: rgb(52, 52, 52)"], [style*="border-bottom-color: rgb(52, 52, 52)"] {
+    border-color: #e5e7eb !important;
+    border-bottom-color: #e5e7eb !important;
+    border-right-color: #e5e7eb !important;
+}
+
+/* Font Size Overrides — base scale 13px → 15px (×1.154) */
+[style*="font-size: 10px"], [style*="fontSize: 10px"] { font-size: 12px !important; }
+[style*="font-size: 11px"], [style*="fontSize: 11px"] { font-size: 13px !important; }
+[style*="font-size: 12px"], [style*="fontSize: 12px"] { font-size: 14px !important; }
+[style*="font-size: 13px"], [style*="fontSize: 13px"] { font-size: 15px !important; }
+[style*="font-size: 14px"], [style*="fontSize: 14px"] { font-size: 16px !important; }
+[style*="font-size: 15px"], [style*="fontSize: 15px"] { font-size: 17px !important; }
+[style*="font-size: 16px"], [style*="fontSize: 16px"] { font-size: 18px !important; }
+[style*="font-size: 18px"], [style*="fontSize: 18px"] { font-size: 21px !important; }
+[style*="font-size: 20px"], [style*="fontSize: 20px"] { font-size: 23px !important; }
+
+/* Ensure SVG icons inherit text color if they don't have hardcoded fills, 
+   though they usually take 'color' due to stroke="currentColor" */
+svg {
+    stroke: currentColor;
+}

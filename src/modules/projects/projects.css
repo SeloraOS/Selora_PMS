@@ -1,0 +1,15 @@
+/* Projects Dashboard responsive overrides */
+
+/* Stat cards: stack on mobile */
+@media (max-width: 768px) {
+  .projects-stat-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Reports & Masters grid: stack on mobile */
+@media (max-width: 768px) {
+  .projects-masters-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
