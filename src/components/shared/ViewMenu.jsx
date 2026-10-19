@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { List, LayoutGrid, ChevronDown, MoreHorizontal, Check, Rows3 } from 'lucide-react';
+import { List, LayoutGrid, ChevronDown, Check, Rows3 } from 'lucide-react';
 
 const button = { backgroundColor: 'var(--control-bg, #ffffff)', border: '1px solid var(--border-color, #e5e7eb)', color: 'var(--text-muted, #4b5563)', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontFamily: 'inherit' };
 const menu = { position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 50, minWidth: '200px', background: 'var(--control-bg, #ffffff)', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '8px', boxShadow: '0 8px 24px rgba(0,0,0,0.15)', padding: '6px', color: 'var(--text-color, #1a1a1a)' };
@@ -22,10 +22,9 @@ function useDropdown() {
 /**
  * Left side of the list toolbar:
  *  - a "List View / Kanban View" dropdown
- *  - next to it, in list view the usual "more" button; in kanban view it becomes the pipeline picker
- *    (the pipeline is the field the board is grouped by).
+ *  - in kanban view, a pipeline picker next to it (the pipeline is the field the board is grouped by)
  */
-export default function ViewMenu({ view, setView, pipelines, pipeline, setPipeline, onMore }) {
+export default function ViewMenu({ view, setView, pipelines, pipeline, setPipeline }) {
   const views = useDropdown();
   const pipes = useDropdown();
 
@@ -68,9 +67,7 @@ export default function ViewMenu({ view, setView, pipelines, pipeline, setPipeli
             </div>
           )}
         </div>
-      ) : (
-        <button type="button" onClick={onMore} style={{ ...button, padding: '6px 8px' }} aria-label="More"><MoreHorizontal size={14} /></button>
-      )}
+      ) : null}
     </div>
   );
 }
