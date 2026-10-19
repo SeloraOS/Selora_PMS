@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { useChartTheme } from '../../../lib/useChartTheme';
 import { useProjects } from '../../../context/ProjectsContext';
 import { entryRows, hoursBy, todayStr } from '../../../lib/reportData';
-import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv } from '../../../components/shared/ReportParts';
+import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv, downloadXls } from '../../../components/shared/ReportParts';
 
 export default function DailyTimesheetSummary() {
   const chart = useChartTheme();
@@ -30,7 +30,7 @@ export default function DailyTimesheetSummary() {
 
   return (
     <ReportPage>
-      <ReportHeader title="Daily Timesheet Summary" onExport={() => downloadCsv(`timesheets-${date}.csv`, columns, day)}>
+      <ReportHeader title="Daily Timesheet Summary" onExport={() => downloadCsv(`timesheets-${date}.csv`, columns, day)} onExcel={() => downloadXls(`timesheets-${date}.csv`, columns, day)}>
         <input type="date" value={date} onChange={(e) => setPicked(e.target.value)} style={{ border: '1px solid var(--border-color)', borderRadius: '6px', padding: '5px 10px', fontSize: '12px', background: 'var(--card-bg)', color: 'var(--text-color)' }} />
       </ReportHeader>
       <StatRow>

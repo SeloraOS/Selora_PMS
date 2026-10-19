@@ -1,0 +1,9 @@
+{
+  "name": "Selora PMS",
+  "short_name": "Selora",
+  "start_url": "/projects/daily-report",
+  "display": "standalone",
+  "background_color": "#0f0f0f",
+  "theme_color": "#0f0f0f",
+  "icons": [{ "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }]
+}

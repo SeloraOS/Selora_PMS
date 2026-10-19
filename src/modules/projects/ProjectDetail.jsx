@@ -3,6 +3,9 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useProjects } from '../../context/ProjectsContext';
 import { useSetup } from '../../context/SetupContext';
 import DeleteButton from '../../components/shared/DeleteButton';
+import ProjectMembers from './ProjectMembers';
+import { FilesPanel, CommentsPanel, ActivityPanel } from '../../components/shared/RecordPanels';
+import { useAuth } from '../../context/AuthContext';
 import { 
   Home, ChevronRight, ChevronDown, ChevronUp, Trash2, Plus, 
   Bold, Italic, Underline, Strikethrough, Link as LinkIcon, Image, 
@@ -149,7 +152,8 @@ export default function ProjectDetail() {
     handleInputChange('users', newUsers);
   };
 
-  const tabs = ['Details', 'Costing', 'Progress', 'More Info'];
+  const { isInternal } = useAuth();
+  const tabs = isNew ? ['Details', 'Costing', 'Progress', 'More Info'] : ['Details', 'Costing', 'Progress', 'More Info', 'Members', 'Files', 'Discussion', ...(isInternal ? ['Activity'] : [])];
 
   // Input styles helper
   const inputStyle = {
@@ -615,6 +619,11 @@ export default function ProjectDetail() {
         )}
 
         {/* ─── MORE INFO TAB (MATCHING SCREENSHOT) ─── */}
+        {!isNew && formData.dbId && activeTab === 'Members' && <ProjectMembers projectId={formData.dbId} />}
+        {!isNew && formData.dbId && activeTab === 'Files' && <FilesPanel projectId={formData.dbId} recordType="project" recordId={formData.dbId} />}
+        {!isNew && formData.dbId && activeTab === 'Discussion' && <CommentsPanel projectId={formData.dbId} recordType="project" recordId={formData.dbId} />}
+        {!isNew && formData.dbId && activeTab === 'Activity' && <ActivityPanel projectId={formData.dbId} />}
+
         {activeTab === 'More Info' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             

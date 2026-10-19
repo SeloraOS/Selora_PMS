@@ -28,7 +28,7 @@ begin
   select string_agg(t, ', ') into msg from unnest(array[
       'projects','project_tasks','task_dependencies','timesheets','timesheet_entries','project_users',
       'project_types','activity_types','activity_costs','project_templates','project_template_tasks',
-      'companies','holiday_lists','holidays','project_updates','pm_settings','profiles']) t
+      'companies','holiday_lists','holidays','project_updates','pm_settings','profiles','attachments','comments']) t
    where not exists (select 1 from pg_publication_tables p where p.pubname = 'supabase_realtime' and p.schemaname = 'public' and p.tablename = t);
   if msg is not null then raise exception 'not in realtime publication: %', msg; end if;
 
@@ -78,6 +78,61 @@ begin
   if n > 0 then raise exception '% projects with unknown company', n; end if;
   select count(*) into n from public.project_users u where not exists (select 1 from public.projects p where p.id = u.project_id);
   if n > 0 then raise exception 'orphan project users'; end if;
+
+  -- phase 1: private file bucket, audit triggers, access helpers
+  select count(*) into n from storage.buckets where id = 'project-files' and not public;
+  if n <> 1 then raise exception 'storage bucket project-files must exist and be private'; end if;
+  select string_agg(t, ', ') into msg from unnest(array['projects','project_tasks','timesheets','project_updates','project_users','pm_settings','profiles','attachments']) t
+   where not exists (select 1 from pg_trigger g where g.tgrelid = ('public.' || t)::regclass and g.tgname = 'trg_' || t || '_audit');
+  if msg is not null then raise exception 'missing audit triggers on: %', msg; end if;
+  select string_agg(f, ', ') into msg from unnest(array['can_access_project','is_staff','is_internal','is_external','current_app_role','my_project_role']) f
+   where not exists (select 1 from pg_proc p where p.pronamespace = 'public'::regnamespace and p.proname = f);
+  if msg is not null then raise exception 'missing access helper functions: %', msg; end if;
+  -- external roles must never be able to read internal cost data (policies reference is_internal)
+  select string_agg(tablename, ', ') into msg from pg_policies
+   where schemaname = 'public' and tablename in ('timesheets','timesheet_entries','activity_types','activity_costs','pm_settings') and cmd in ('SELECT','ALL')
+     and qual not like '%is_internal%' and qual not like '%current_role_is%';
+  if msg is not null then raise exception 'cost tables readable by external roles: %', msg; end if;
+
+  -- phase 2: site tables are secured, audited and realtime
+  select string_agg(t, ', ') into msg from unnest(array['trades','snag_categories','daily_reports','daily_report_work','daily_report_manpower','snags','approvals']) t
+   where not exists (select 1 from pg_publication_tables p where p.pubname = 'supabase_realtime' and p.schemaname = 'public' and p.tablename = t);
+  if msg is not null then raise exception 'site tables missing from realtime: %', msg; end if;
+  select string_agg(t, ', ') into msg from unnest(array['daily_reports','snags','approvals']) t
+   where not exists (select 1 from pg_trigger g where g.tgrelid = ('public.' || t)::regclass and g.tgname = 'trg_' || t || '_audit');
+  if msg is not null then raise exception 'missing audit triggers on: %', msg; end if;
+  select count(*) into n from public.approvals where approved_on is not null and applied_on is not null and approved_on < applied_on;
+  if n > 0 then raise exception 'approvals approved before applied'; end if;
+  select count(*) into n from public.daily_report_work w join public.daily_reports r on r.id = w.report_id join public.project_tasks t on t.id = w.task_id where t.project_id <> r.project_id;
+  if n > 0 then raise exception 'daily report work lines on tasks of another project'; end if;
+  select count(*) into n from public.pm_settings where approval_warning_days < 1 or snag_default_due_days < 1;
+  if n > 0 then raise exception 'invalid site settings'; end if;
+
+  -- phase 3: finance tables secured, audited, realtime; money math consistent
+  select string_agg(t, ', ') into msg from unnest(array['cost_heads','vendors','budgets','budget_revisions','work_orders','ra_bills','payments','material_requests']) t
+   where not exists (select 1 from pg_publication_tables p where p.pubname = 'supabase_realtime' and p.schemaname = 'public' and p.tablename = t);
+  if msg is not null then raise exception 'finance tables missing from realtime: %', msg; end if;
+  select string_agg(t, ', ') into msg from unnest(array['vendors','budgets','work_orders','ra_bills','payments','material_requests']) t
+   where not exists (select 1 from pg_trigger g where g.tgrelid = ('public.' || t)::regclass and g.tgname = 'trg_' || t || '_audit');
+  if msg is not null then raise exception 'missing audit triggers on: %', msg; end if;
+  select count(*) into n from public.ra_bills where net_amount <> gross_amount + gst_amount - retention_amount - tds_amount or paid_amount > net_amount;
+  if n > 0 then raise exception '% bills with inconsistent amounts', n; end if;
+  select count(*) into n from public.ra_bills b where paid_amount <> coalesce((select sum(amount) from public.payments p where p.bill_id = b.id), 0);
+  if n > 0 then raise exception '% bills whose paid_amount differs from their payments', n; end if;
+  select count(*) into n from public.work_orders w where w.amount < coalesce((select sum(gross_amount) from public.ra_bills b where b.work_order_id = w.id and b.status <> 'rejected'), 0);
+  if n > 0 then raise exception '% work orders billed above their value', n; end if;
+  select count(*) into n from public.ra_bills b join public.work_orders w on w.id = b.work_order_id where b.project_id <> w.project_id or b.vendor_id <> w.vendor_id;
+  if n > 0 then raise exception 'bills whose project or vendor differs from their work order'; end if;
+  select count(*) into n from pg_policies where schemaname = 'public' and tablename in ('vendors','budgets','work_orders','ra_bills','payments','material_requests','cost_heads') and roles::text like '%anon%';
+  if n > 0 then raise exception 'finance policies must not apply to anon'; end if;
+
+  -- phase 5: notification log is staff-only; settings constraints; feed token present
+  select count(*) into n from pg_policies where schemaname = 'public' and tablename = 'notification_log' and cmd <> 'SELECT';
+  if n > 0 then raise exception 'notification_log must be written by the service role only'; end if;
+  select count(*) into n from public.pm_settings where length(coalesce(ics_token, '')) < 16;
+  if n > 0 then raise exception 'calendar feed token missing'; end if;
+  select count(*) into n from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'notification_log';
+  if n <> 1 then raise exception 'notification_log not in realtime'; end if;
 
   raise notice 'verify.sql: all checks passed';
 end $$;

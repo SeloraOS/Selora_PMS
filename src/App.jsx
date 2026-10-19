@@ -1,9 +1,11 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Construction } from 'lucide-react';
 import AppShell from './components/layout/AppShell';
 import { ProjectsProvider } from './context/ProjectsContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import ChangePassword from './pages/ChangePassword';
+import { PortalHome, PortalProject, PortalTask } from './modules/projects/Portal';
 import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
 import ProjectsDashboard from './modules/projects';
@@ -26,6 +28,21 @@ import ProjectWiseCost from './modules/projects/reports/ProjectWiseCost';
 import Users from './modules/projects/Users';
 import Calendar from './modules/projects/Calendar';
 import { SetupProvider } from './context/SetupContext';
+import { SiteProvider } from './context/SiteContext';
+import { FinanceProvider } from './context/FinanceContext';
+import Vendors from './modules/projects/finance/Vendors';
+import WorkOrders from './modules/projects/finance/WorkOrders';
+import RABills from './modules/projects/finance/RABills';
+import Budgets from './modules/projects/finance/Budgets';
+import FinanceDashboard from './modules/projects/finance/FinanceDashboard';
+import DemandLetter from './modules/projects/finance/DemandLetter';
+import AccountingExport from './modules/projects/finance/AccountingExport';
+import MaterialRequests from './modules/projects/finance/MaterialRequests';
+import Approvals from './modules/projects/site/Approvals';
+import Snags from './modules/projects/site/Snags';
+import Gantt from './modules/projects/site/Gantt';
+import { DailyReportList, DailyReportForm } from './modules/projects/site/DailyReports';
+import { Trades, SnagCategories } from './modules/projects/site/Lookups';
 import DelayedTasksSummary from './modules/projects/reports/DelayedTasksSummary';
 import ProjectsSearch from './modules/projects/ProjectsSearch';
 import ProjectsSettings from './modules/projects/ProjectsSettings';
@@ -50,9 +67,30 @@ const Placeholder = ({ title }) => (
 );
 
 function RequireAuth({ children }) {
-  const { user, loading } = useAuth();
-  if (loading) return null;
-  return user ? children : <Navigate to="/login" replace />;
+  const { user, loading, profile, profileLoading } = useAuth();
+  const location = useLocation();
+  if (loading || (user && profileLoading)) return null;
+  if (!user) return <Navigate to="/login" replace />;
+  if (profile?.must_change_password && location.pathname !== '/change-password') return <Navigate to="/change-password" replace />;
+  return children;
+}
+
+/** Routes that clients and contractors must not reach (also enforced by row level security). */
+function InternalOnly({ children }) {
+  const { isExternal } = useAuth();
+  return isExternal ? <Navigate to="/projects" replace /> : children;
+}
+
+/** Clients cannot file daily reports. */
+function NoClient({ children }) {
+  const { role } = useAuth();
+  return role === 'client' ? <Navigate to="/projects" replace /> : children;
+}
+
+/** One URL, two screens: the internal page for staff/members, the portal page for clients/contractors. */
+function ByRole({ internal, external }) {
+  const { isExternal } = useAuth();
+  return isExternal ? external : internal;
 }
 
 export default function App() {
@@ -62,13 +100,18 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/change-password" element={<RequireAuth><ChangePassword /></RequireAuth>} />
           <Route
             path="/"
             element={
               <RequireAuth>
                 <SetupProvider>
                   <ProjectsProvider>
-                    <AppShell />
+                    <SiteProvider>
+                      <FinanceProvider>
+                        <AppShell />
+                      </FinanceProvider>
+                    </SiteProvider>
                   </ProjectsProvider>
                 </SetupProvider>
               </RequireAuth>
@@ -76,30 +119,45 @@ export default function App() {
           >
             <Route index element={<Navigate to="/projects" replace />} />
             <Route path="notifications" element={<Placeholder title="Notifications" />} />
-            <Route path="projects" element={<ProjectsDashboard />} />
-            <Route path="projects/project" element={<ProjectList />} />
-            <Route path="projects/project/:id" element={<ProjectDetail />} />
-            <Route path="projects/task" element={<TaskList />} />
-            <Route path="projects/task/:id" element={<TaskDetail />} />
-            <Route path="projects/timesheet" element={<TimesheetList />} />
-            <Route path="projects/timesheet/:id" element={<TimesheetDetail />} />
-            <Route path="projects/setup/activity-type" element={<ActivityType />} />
-            <Route path="projects/setup/activity-cost" element={<ActivityCost />} />
-            <Route path="projects/setup/project-template" element={<ProjectTemplate />} />
-            <Route path="projects/setup/project-type" element={<ProjectType />} />
-            <Route path="projects/setup/project-update" element={<ProjectUpdate />} />
-            <Route path="projects/setup/holiday-list" element={<HolidayList />} />
-            <Route path="projects/reports/project-summary" element={<ProjectSummary />} />
-            <Route path="projects/reports/daily-timesheet-summary" element={<DailyTimesheetSummary />} />
-            <Route path="projects/reports/timesheet-billing-summary" element={<TimesheetBillingSummary />} />
-            <Route path="projects/reports/project-wise-cost" element={<ProjectWiseCost />} />
+            <Route path="projects" element={<ByRole internal={<ProjectsDashboard />} external={<PortalHome />} />} />
+            <Route path="projects/project" element={<InternalOnly><ProjectList /></InternalOnly>} />
+            <Route path="projects/project/:id" element={<ByRole internal={<ProjectDetail />} external={<PortalProject />} />} />
+            <Route path="projects/task" element={<InternalOnly><TaskList /></InternalOnly>} />
+            <Route path="projects/task/:id" element={<ByRole internal={<TaskDetail />} external={<PortalTask />} />} />
+            <Route path="projects/timesheet" element={<InternalOnly><TimesheetList /></InternalOnly>} />
+            <Route path="projects/timesheet/:id" element={<InternalOnly><TimesheetDetail /></InternalOnly>} />
+            <Route path="projects/setup/activity-type" element={<InternalOnly><ActivityType /></InternalOnly>} />
+            <Route path="projects/setup/activity-cost" element={<InternalOnly><ActivityCost /></InternalOnly>} />
+            <Route path="projects/setup/project-template" element={<InternalOnly><ProjectTemplate /></InternalOnly>} />
+            <Route path="projects/setup/project-type" element={<InternalOnly><ProjectType /></InternalOnly>} />
+            <Route path="projects/setup/project-update" element={<InternalOnly><ProjectUpdate /></InternalOnly>} />
+            <Route path="projects/setup/holiday-list" element={<InternalOnly><HolidayList /></InternalOnly>} />
+            <Route path="projects/reports/project-summary" element={<InternalOnly><ProjectSummary /></InternalOnly>} />
+            <Route path="projects/reports/daily-timesheet-summary" element={<InternalOnly><DailyTimesheetSummary /></InternalOnly>} />
+            <Route path="projects/reports/timesheet-billing-summary" element={<InternalOnly><TimesheetBillingSummary /></InternalOnly>} />
+            <Route path="projects/reports/project-wise-cost" element={<InternalOnly><ProjectWiseCost /></InternalOnly>} />
             <Route path="projects/reports/project-wise-stock-tracking" element={<Navigate to="/projects/reports/project-wise-cost" replace />} />
-            <Route path="projects/users" element={<Users />} />
+            <Route path="projects/users" element={<InternalOnly><Users /></InternalOnly>} />
+            <Route path="projects/daily-report" element={<NoClient><DailyReportList /></NoClient>} />
+            <Route path="projects/daily-report/:id" element={<NoClient><DailyReportForm /></NoClient>} />
+            <Route path="projects/finance" element={<InternalOnly><FinanceDashboard /></InternalOnly>} />
+            <Route path="projects/budgets" element={<InternalOnly><Budgets /></InternalOnly>} />
+            <Route path="projects/demand-letter" element={<InternalOnly><DemandLetter /></InternalOnly>} />
+            <Route path="projects/accounting-export" element={<InternalOnly><AccountingExport /></InternalOnly>} />
+            <Route path="projects/vendors" element={<InternalOnly><Vendors /></InternalOnly>} />
+            <Route path="projects/material-requests" element={<InternalOnly><MaterialRequests /></InternalOnly>} />
+            <Route path="projects/work-orders" element={<NoClient><WorkOrders /></NoClient>} />
+            <Route path="projects/ra-bills" element={<NoClient><RABills /></NoClient>} />
+            <Route path="projects/snags" element={<Snags />} />
+            <Route path="projects/approvals" element={<InternalOnly><Approvals /></InternalOnly>} />
+            <Route path="projects/gantt" element={<InternalOnly><Gantt /></InternalOnly>} />
+            <Route path="projects/setup/trades" element={<InternalOnly><Trades /></InternalOnly>} />
+            <Route path="projects/setup/snag-categories" element={<InternalOnly><SnagCategories /></InternalOnly>} />
             <Route path="projects/calendar" element={<Calendar />} />
-            <Route path="projects/reports/delayed-tasks-summary" element={<DelayedTasksSummary />} />
-            <Route path="projects/settings" element={<ProjectsSettings />} />
-            <Route path="projects/getting-started" element={<GettingStarted />} />
-            <Route path="projects/search" element={<ProjectsSearch />} />
+            <Route path="projects/reports/delayed-tasks-summary" element={<InternalOnly><DelayedTasksSummary /></InternalOnly>} />
+            <Route path="projects/settings" element={<InternalOnly><ProjectsSettings /></InternalOnly>} />
+            <Route path="projects/getting-started" element={<InternalOnly><GettingStarted /></InternalOnly>} />
+            <Route path="projects/search" element={<InternalOnly><ProjectsSearch /></InternalOnly>} />
             <Route path="*" element={<Navigate to="/projects" replace />} />
           </Route>
         </Routes>

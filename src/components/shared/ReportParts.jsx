@@ -9,14 +9,20 @@ export const ReportPage = ({ children }) => (
   </div>
 );
 
-export function ReportHeader({ title, onExport, children }) {
+export function ReportHeader({ title, onExport, onExcel, children }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
       <h1 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-color)', margin: 0 }}>{title}</h1>
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         {children}
         {onExport && (
-          <button onClick={onExport} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 500, cursor: 'pointer' }}>Export CSV</button>
+          <button onClick={onExport} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', color: 'var(--text-color)' }}>Export CSV</button>
+        )}
+        {onExcel && (
+          <button onClick={onExcel} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', color: 'var(--text-color)' }}>Export Excel</button>
+        )}
+        {onExport && (
+          <button onClick={() => window.print()} className="no-print" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px 12px', fontSize: '12px', fontWeight: 500, cursor: 'pointer', color: 'var(--text-color)' }}>Print / PDF</button>
         )}
       </div>
     </div>
@@ -73,6 +79,10 @@ export function ReportTable({ columns, rows, empty = 'No data to show.' }) {
     </div>
   );
 }
+
+import { downloadXlsFile } from '../../lib/exportRows';
+/** Download rows as an Excel file (HTML table). */
+export const downloadXls = (filename, columns, rows) => downloadXlsFile(filename.replace(/\.csv$/, ''), columns, rows);
 
 /** Download rows as a CSV file. `columns`: [{ label, render }] (render must return text/number). */
 export function downloadCsv(filename, columns, rows) {

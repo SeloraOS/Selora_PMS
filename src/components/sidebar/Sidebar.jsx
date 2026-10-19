@@ -35,6 +35,7 @@ function SidebarSectionLabel({ label, isOpen, onToggle, isCollapsed }) {
 
 function SidebarGroup({ label, items, isCollapsed }) {
   const [open, setOpen] = useState(true);
+  if (!items.length) return null;
   return (
     <>
       <SidebarSectionLabel
@@ -60,8 +61,9 @@ function SidebarGroup({ label, items, isCollapsed }) {
 
 export default function Sidebar({ isCollapsed, setIsCollapsed, onOpenNotifications }) {
   const config = PROJECTS_SIDEBAR_CONFIG;
-  const { profile } = useAuth();
-  const { count: overdueCount } = useAlerts();
+  const { profile, isExternal, role } = useAuth();
+  const visible = (items) => items.filter((i) => !(i.internalOnly && isExternal) && !(i.noClient && role === 'client'));
+  const { total: overdueCount } = useAlerts();
 
   return (
     <aside
@@ -97,11 +99,12 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, onOpenNotificatio
           />
         ))}
 
-        <SidebarGroup label="ERP" items={config.erp} isCollapsed={isCollapsed} />
-        <SidebarGroup label="Setup" items={config.setup} isCollapsed={isCollapsed} />
-        <SidebarGroup label="Reports" items={config.reports} isCollapsed={isCollapsed} />
+        <SidebarGroup label={isExternal ? 'Portal' : 'ERP'} items={visible(config.erp)} isCollapsed={isCollapsed} />
+        <SidebarGroup label="Finance" items={visible(config.finance)} isCollapsed={isCollapsed} />
+        <SidebarGroup label="Setup" items={visible(config.setup)} isCollapsed={isCollapsed} />
+        <SidebarGroup label="Reports" items={visible(config.reports)} isCollapsed={isCollapsed} />
 
-        {[...config.settings, ...config.footer]
+        {visible([...config.settings, ...config.footer])
           .filter(item => !item.adminOnly || can(profile, 'manageUsers'))
           .map(item => (
           <SidebarNavItem key={item.key} item={item} isCollapsed={isCollapsed} />

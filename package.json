@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "verify:db": "node scripts/verify-db.mjs"
+    "verify:db": "node scripts/verify-db.mjs",
+    "test:access": "node scripts/test-access.mjs"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",

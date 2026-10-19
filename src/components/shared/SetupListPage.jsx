@@ -8,6 +8,7 @@
  */
 import React, { useMemo, useState } from 'react';
 import { Plus, X, RefreshCw, Filter, FileText, Trash2 } from 'lucide-react';
+import { ExportMenu } from './ListMenus';
 
 const buttonStyle = { backgroundColor: 'var(--control-bg, #ffffff)', border: '1px solid var(--border-color, #e5e7eb)', color: 'var(--text-muted, #4b5563)', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' };
 const inputStyle = { backgroundColor: 'var(--control-bg, #ffffff)', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '6px', padding: '6px 10px', fontSize: '13px', color: 'var(--text-color, #1a1a1a)', width: '100%', boxSizing: 'border-box' };
@@ -53,7 +54,7 @@ function RowListField({ value, onChange, disabled, columns }) {
 
 export default function SetupListPage({
   title, addLabel, rows, columns, searchText, filters = [], fields,
-  canEdit, canCreate = canEdit, canDelete = () => canEdit, onSave, onDelete, toForm, fromForm, loading,
+  canEdit, canCreate = canEdit, canDelete = () => canEdit, onSave, onDelete, toForm, fromForm, loading, extraActions, fieldDisabled, renderRow,
 }) {
   const [search, setSearch] = useState('');
   const [filterValues, setFilterValues] = useState({});
@@ -103,6 +104,8 @@ export default function SetupListPage({
               <Filter size={14} /> Filter
             </button>
           )}
+          <ExportMenu name={title.toLowerCase().replace(/\s+/g, '-')} columns={columns} rows={visible} disabled={!visible.length} />
+          {extraActions}
           {canCreate && (
             <button onClick={openNew} style={{ backgroundColor: 'var(--gray-900, #111827)', border: '1px solid var(--gray-900, #111827)', color: '#ffffff', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Plus size={14} /> {addLabel || `Add ${title}`}
@@ -170,19 +173,20 @@ export default function SetupListPage({
                 <div key={f.name}>
                   <label style={labelStyle}>{f.label}{f.required ? ' *' : ''}</label>
                   {f.type === 'select' ? (
-                    <select style={inputStyle} value={editing.values[f.name] ?? ''} disabled={readOnly} onChange={(e) => setValue(f.name, e.target.value)}>
+                    <select style={inputStyle} value={editing.values[f.name] ?? ''} disabled={readOnly || !!fieldDisabled?.(f, editing.row)} onChange={(e) => setValue(f.name, e.target.value)}>
                       <option value="">{f.placeholder || 'Select…'}</option>
                       {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   ) : f.type === 'textarea' ? (
-                    <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={editing.values[f.name] ?? ''} disabled={readOnly} onChange={(e) => setValue(f.name, e.target.value)} />
+                    <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={editing.values[f.name] ?? ''} disabled={readOnly || !!fieldDisabled?.(f, editing.row)} onChange={(e) => setValue(f.name, e.target.value)} />
                   ) : f.type === 'rowlist' ? (
                     <RowListField columns={f.columns} value={editing.values[f.name]} disabled={readOnly} onChange={(v) => setValue(f.name, v)} />
                   ) : (
-                    <input style={inputStyle} type={f.type || 'text'} min={f.type === 'number' ? 0 : undefined} value={editing.values[f.name] ?? ''} disabled={readOnly} onChange={(e) => setValue(f.name, e.target.value)} />
+                    <input style={inputStyle} type={f.type || 'text'} min={f.type === 'number' ? 0 : undefined} value={editing.values[f.name] ?? ''} disabled={readOnly || !!fieldDisabled?.(f, editing.row)} onChange={(e) => setValue(f.name, e.target.value)} />
                   )}
                 </div>
               ))}
+              {editing.row && renderRow && renderRow(editing.row)}
               {error && <div style={{ fontSize: '12px', color: '#ef4444' }}>{error}</div>}
             </div>
             <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color, #e5e7eb)', display: 'flex', alignItems: 'center', gap: '12px' }}>

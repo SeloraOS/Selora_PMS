@@ -68,6 +68,7 @@ const PROJECT_SPEC = [
 
 const TASK_SPEC = [
   ['subject', 'subject', 'text'],
+  ['assigneeId', 'assignee_id', 'text'],
   ['isTemplate', 'is_template', 'yesno'],
   ['issue', 'issue', 'text'],
   ['type', 'type', 'text'],
@@ -76,6 +77,10 @@ const TASK_SPEC = [
   ['status', 'status', 'text'],
   ['priority', 'priority', 'text'],
   ['weight', 'weight', 'num'],
+  ['percentComplete', 'percent_complete', 'num'],
+  ['baselineStart', 'baseline_start_date', 'date'],
+  ['baselineEnd', 'baseline_end_date', 'date'],
+  ['baselineSetAt', 'baseline_set_at', 'ts'],
   ['description', 'description', 'text'],
   ['company', 'company', 'text'],
   ['department', 'department', 'text'],

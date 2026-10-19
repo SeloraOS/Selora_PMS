@@ -3,10 +3,10 @@
  */
 import { addDays } from './dates.js';
 
-export const TYPES = ['task', 'project', 'timesheet', 'holiday', 'update'];
-export const TYPE_LABELS = { task: 'Tasks', project: 'Project dates', timesheet: 'Timesheet hours', holiday: 'Holidays', update: 'Project updates' };
+export const TYPES = ['task', 'project', 'timesheet', 'holiday', 'update', 'approval', 'snag'];
+export const TYPE_LABELS = { task: 'Tasks', project: 'Project dates', timesheet: 'Timesheet hours', holiday: 'Holidays', update: 'Project updates', approval: 'Approval expiry', snag: 'Snags due' };
 // order inside a day cell (what is most informative stays visible when a cell is crowded)
-const ORDER = { holiday: 0, project: 1, update: 2, timesheet: 3, task: 4 };
+const ORDER = { holiday: 0, approval: 1, snag: 1, project: 2, update: 3, timesheet: 4, task: 5 };
 // among tasks: overdue first, then the ones starting/ending that day, then the days in between
 const taskRank = (e) => (e.overdue ? 0 : e.isStart || e.isEnd ? 1 : 2);
 
@@ -133,6 +133,21 @@ export function buildEvents(data, { from, to, today, types, project = '' }) {
       const name = u.projects?.project_name || '';
       if (!inRange(u.update_date) || (project && name !== project)) continue;
       events.push({ key: `update:${u.id}`, type: 'update', date: u.update_date, id: u.id, kind: u.type, title: u.description || u.type, sub: name, link: '/projects/setup/project-update' });
+    }
+  }
+  if (on('approval')) {
+    for (const a of data.approvals || []) {
+      const name = (data.projects || []).find((p) => p.dbId === a.project_id)?.projectName || '';
+      if (a.status !== 'Approved' || !a.expiry_on || !inRange(a.expiry_on) || (project && name !== project)) continue;
+      events.push({ key: `approval:${a.id}`, type: 'approval', date: a.expiry_on, id: a.id, title: `${a.name} expires`, sub: name, overdue: a.expiry_on < today, link: '/projects/approvals' });
+    }
+  }
+
+  if (on('snag')) {
+    for (const s of data.snags || []) {
+      const name = (data.projects || []).find((p) => p.dbId === s.project_id)?.projectName || '';
+      if (!s.due_date || (s.status !== 'Open' && s.status !== 'Fixed') || !inRange(s.due_date) || (project && name !== project)) continue;
+      events.push({ key: `snag:${s.id}`, type: 'snag', date: s.due_date, id: s.id, title: `Snag due: ${s.title}`, sub: name, overdue: s.due_date < today, link: '/projects/snags' });
     }
   }
   return events;

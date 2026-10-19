@@ -18,6 +18,7 @@ import { useProjects } from '../../context/ProjectsContext';
 import { useAlerts } from '../../lib/useAlerts';
 import { useChartTheme } from '../../lib/useChartTheme';
 import { entryRows, dashboardStats, monthlyHours, todayStr, formatINR } from '../../lib/reportData';
+import RoleDashboard from './RoleDashboard';
 import StatCard from '../../components/shared/StatCard';
 import ChartCard from '../../components/shared/ChartCard';
 
@@ -159,6 +160,8 @@ export default function ProjectsDashboard() {
           <ArrowUpRight size={14} style={{ marginLeft: 'auto' }} />
         </Link>
       )}
+
+      <RoleDashboard />
 
       {/* Working hours per month */}
       <ChartCard
