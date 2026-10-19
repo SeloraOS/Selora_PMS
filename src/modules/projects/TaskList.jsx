@@ -4,19 +4,25 @@ import { useProjects } from '../../context/ProjectsContext';
 import { useSelection } from '../../lib/useSelection';
 import { useViewMode } from '../../lib/useViewMode';
 import ViewMenu from '../../components/shared/ViewMenu';
+import { SortMenu, ColumnsMenu } from '../../components/shared/ListMenus';
+import RecordTable from '../../components/shared/RecordTable';
+import { sortRows } from '../../lib/sortRows';
+import { useListPrefs } from '../../lib/useListPrefs';
+import { TASK_COLUMNS } from './listColumns';
 import { useSetup } from '../../context/SetupContext';
 import KanbanBoard from '../../components/shared/KanbanBoard';
 import { TaskCard } from './kanbanCards';
 import { todayStr } from '../../lib/reportData';
 import BulkDeleteButton from '../../components/shared/BulkDeleteButton';
 import { 
-  Filter, RefreshCw, MoreHorizontal, ChevronDown, Plus, CheckSquare, X, List, ArrowUpDown, Columns
+  Filter, RefreshCw, MoreHorizontal, Plus, CheckSquare, X
 } from 'lucide-react';
 
 export default function TaskList() {
   const navigate = useNavigate();
   const { projects, projectTasks, addProjectTask, deleteProjectTask, updateProjectTask } = useProjects();
   const { view, setView, pipeline, setPipeline, pipelines } = useViewMode('task');
+  const prefs = useListPrefs('task', TASK_COLUMNS, { key: 'createdOn', order: 'desc' });
   const { projectTypes } = useSetup();
   const pipelineCtx = { projects, projectTypes };
   const selection = useSelection();
@@ -37,8 +43,6 @@ export default function TaskList() {
   const [filterStatus, setFilterStatus] = useState('Open');
   const [statusTouched, setStatusTouched] = useState(false); // the default 'Open' filter must not hide cards on a board grouped by something else
   const [filterPriority, setFilterPriority] = useState('');
-  const [sortBy, setSortBy] = useState('createdOn');
-  const [sortOrder, setSortOrder] = useState('desc');
 
   const handleOpenModal = () => {
     setModalForm({ subject: '', project: projects.length > 0 ? projects[0].projectName : '', priority: 'Low' });
@@ -63,19 +67,7 @@ export default function TaskList() {
            (filterPriority ? task.priority === filterPriority : true);
   });
 
-  const sortedTasks = [...filteredTasks].sort((a, b) => {
-    let fieldA = a[sortBy] || ''; let fieldB = b[sortBy] || '';
-    if (sortBy === 'createdOn') {
-      const partsA = fieldA.split('/'); const partsB = fieldB.split('/');
-      if (partsA.length === 3 && partsB.length === 3) {
-        fieldA = new Date(partsA[2], partsA[1] - 1, partsA[0]).getTime();
-        fieldB = new Date(partsB[2], partsB[1] - 1, partsB[0]).getTime();
-      }
-    }
-    if (fieldA < fieldB) return sortOrder === 'asc' ? -1 : 1;
-    if (fieldA > fieldB) return sortOrder === 'asc' ? 1 : -1;
-    return 0;
-  });
+  const sortedTasks = sortRows(filteredTasks, prefs.sortColumn, prefs.sort.order);
 
   const clearFilters = () => { setFilterId(''); setFilterSubject(''); setFilterProject(''); setFilterStatus(''); setFilterPriority(''); };
 
@@ -96,8 +88,8 @@ export default function TaskList() {
           <button onClick={() => setShowFilters(!showFilters)} style={{ ...buttonStyle, backgroundColor: showFilters ? 'var(--surface-gray-2, #f3f4f6)' : 'var(--control-bg, #ffffff)' }}>
             <Filter size={14} /> Filter
           </button>
-          <button style={buttonStyle}><ArrowUpDown size={14} /> Sort</button>
-          <button style={buttonStyle}><Columns size={14} /> Columns</button>
+          <SortMenu columns={TASK_COLUMNS} sort={prefs.sort} onChange={prefs.setSort} />
+          <ColumnsMenu columns={TASK_COLUMNS} visibleSet={prefs.visibleSet} onToggle={prefs.toggleColumn} onReset={prefs.resetColumns} disabled={view === 'kanban'} disabledHint="Columns apply to the list view" />
           <button style={{ ...buttonStyle, padding: '6px 8px' }}><MoreHorizontal size={14} /></button>
           <BulkDeleteButton rows={sortedTasks.filter(r => selection.has(r.id))} label="task" onDelete={deleteProjectTask} onDone={selection.clear} />
           <button onClick={handleOpenModal} style={{ backgroundColor: 'var(--gray-900, #111827)', border: '1px solid var(--gray-900, #111827)', color: '#ffffff', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
@@ -108,7 +100,7 @@ export default function TaskList() {
 
       {/* ─── Expandable Filter Bar ─── */}
       {showFilters && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', backgroundColor: 'var(--surface-gray-1, #f9fafb)', borderBottom: '1px solid var(--border-color, #e5e7eb)', padding: '12px 24px', alignItems: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', backgroundColor: 'var(--surface-gray-1, #f9fafb)', borderBottom: '1px solid var(--border-color, #e5e7eb)', padding: '12px 24px', alignItems: 'center' }}>
           <input placeholder="ID" value={filterId} onChange={e => setFilterId(e.target.value)} style={inputStyle} />
           <input placeholder="Subject" value={filterSubject} onChange={e => setFilterSubject(e.target.value)} style={inputStyle} />
           <select value={filterProject} onChange={e => setFilterProject(e.target.value)} style={inputStyle}>
@@ -126,9 +118,6 @@ export default function TaskList() {
           <button onClick={clearFilters} style={{ ...buttonStyle, width: '100%', justifyContent: 'center' }}>
             <Filter size={13} /> Clear Filters
           </button>
-          <select value={`${sortBy}:${sortOrder}`} onChange={e => { const [field, order] = e.target.value.split(':'); setSortBy(field); setSortOrder(order); }} style={inputStyle}>
-            <option value="createdOn:desc">Created On ↓</option><option value="createdOn:asc">Created On ↑</option><option value="subject:asc">Subject A-Z</option><option value="subject:desc">Subject Z-A</option>
-          </select>
         </div>
       )}
 
@@ -154,54 +143,14 @@ export default function TaskList() {
             </button>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto', padding: '0 24px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color, #e5e7eb)', color: 'var(--text-muted, #6b7280)' }}>
-                  <th style={{ padding: '12px 0 12px 8px', width: '30px', textAlign: 'center' }}><input type="checkbox" checked={sortedTasks.length > 0 && sortedTasks.every(r => selection.has(r.id))} onChange={e => selection.toggleAll(sortedTasks.map(r => r.id), e.target.checked)} style={{ cursor: 'pointer', accentColor: 'var(--gray-900, #111827)' }} /></th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>ID</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>SUBJECT</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PROJECT</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>STATUS</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PRIORITY</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>CREATED ON</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedTasks.map(task => (
-                  <tr 
-                    key={task.id} 
-                    onClick={() => navigate(`/projects/task/${task.id}`)}
-                    style={{ borderBottom: '1px solid var(--border-color, #f3f4f6)', cursor: 'pointer', transition: 'background-color 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--surface-gray-1, #f9fafb)'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    <td style={{ padding: '12px 0 12px 8px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
-                      <input type="checkbox" checked={selection.has(task.id)} onChange={() => selection.toggle(task.id)} style={{ cursor: 'pointer', accentColor: 'var(--gray-900, #111827)' }} />
-                    </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-color, #1a1a1a)', fontWeight: 500 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '24px', height: '24px', backgroundColor: 'var(--surface-gray-1, #f9fafb)', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <CheckSquare size={12} color="var(--text-muted, #6b7280)" />
-                        </div>
-                        {task.id}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-color, #1a1a1a)' }}>{task.subject}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-muted, #4b5563)' }}>{task.project || '—'}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 500, backgroundColor: task.status === 'Open' ? 'var(--st-blue-bg)' : task.status === 'Completed' ? 'var(--st-green-bg)' : task.status === 'Working' ? 'var(--st-amber-bg)' : 'var(--st-red-bg)', color: task.status === 'Open' ? 'var(--st-blue-fg)' : task.status === 'Completed' ? 'var(--st-green-fg)' : task.status === 'Working' ? 'var(--st-amber-fg)' : 'var(--st-red-fg)' }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: task.status === 'Open' ? '#3b82f6' : task.status === 'Completed' ? '#22c55e' : task.status === 'Working' ? '#f59e0b' : '#ef4444' }}></div>
-                        {task.status}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-muted, #6b7280)' }}>{task.priority || '—'}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-muted, #6b7280)' }}>{task.createdOn}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <RecordTable
+            columns={prefs.visibleColumns}
+            rows={sortedTasks}
+            selection={selection}
+            onOpen={r => navigate(`/projects/task/${r.id}`)}
+            sort={prefs.sort}
+            onSort={key => prefs.setSort({ key, order: prefs.sort.key === key && prefs.sort.order === 'asc' ? 'desc' : 'asc' })}
+          />
         )}
       </div>
 

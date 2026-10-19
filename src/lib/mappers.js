@@ -121,6 +121,7 @@ export const projectFromRow = (row, idx) => ({
     .sort((a, b) => a.sort_order - b.sort_order)
     .map((u) => ({ user: u.user_email, fullName: u.full_name ?? '', selected: false })),
   createdBy: row.created_by,
+  createdAt: row.created_at,
   createdOn: createdOn(row),
 });
 export function projectToRow(ui, idx) {
@@ -142,6 +143,7 @@ export const taskFromRow = (row, idx) => ({
     .filter(Boolean)
     .map((t) => ({ taskId: t.code, subject: t.subject, selected: false })),
   createdBy: row.created_by,
+  createdAt: row.created_at,
   createdOn: createdOn(row),
 });
 export function taskToRow(ui, idx) {
@@ -197,6 +199,7 @@ export const timesheetFromRow = (row, idx) => ({
   totalBillableAmount: Number(row.total_billable_amount),
   totalCostingAmount: Number(row.total_costing_amount),
   createdBy: row.created_by,
+  createdAt: row.created_at,
   createdOn: createdOn(row),
 });
 // Totals and entry rates are computed by database triggers, so they are never written from the client.

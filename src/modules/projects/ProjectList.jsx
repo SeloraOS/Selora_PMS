@@ -4,18 +4,24 @@ import { useProjects } from '../../context/ProjectsContext';
 import { useSelection } from '../../lib/useSelection';
 import { useViewMode } from '../../lib/useViewMode';
 import ViewMenu from '../../components/shared/ViewMenu';
+import { SortMenu, ColumnsMenu } from '../../components/shared/ListMenus';
+import RecordTable from '../../components/shared/RecordTable';
+import { sortRows } from '../../lib/sortRows';
+import { useListPrefs } from '../../lib/useListPrefs';
+import { PROJECT_COLUMNS } from './listColumns';
 import KanbanBoard from '../../components/shared/KanbanBoard';
 import { ProjectCard } from './kanbanCards';
 import BulkDeleteButton from '../../components/shared/BulkDeleteButton';
 import { useSetup } from '../../context/SetupContext';
 import { 
-  Filter, RefreshCw, MoreHorizontal, ChevronDown, Plus, FileText, X, List, ArrowUpDown, Columns
+  Filter, RefreshCw, MoreHorizontal, Plus, FileText, X
 } from 'lucide-react';
 
 export default function ProjectList() {
   const navigate = useNavigate();
   const { projects, addProject, deleteProject, updateProject, projectTasks } = useProjects();
   const { view, setView, pipeline, setPipeline, pipelines } = useViewMode('project');
+  const prefs = useListPrefs('project', PROJECT_COLUMNS, { key: 'createdOn', order: 'desc' });
   const selection = useSelection();
   const { templates, companies, settings, projectTypes } = useSetup();
   const pipelineCtx = { projects, projectTypes };
@@ -37,8 +43,6 @@ export default function ProjectList() {
   const [statusTouched, setStatusTouched] = useState(false); // the default 'Open' filter must not hide cards on a board grouped by something else
   const [filterType, setFilterType] = useState('');
   const [filterPriority, setFilterPriority] = useState('');
-  const [sortBy, setSortBy] = useState('createdOn');
-  const [sortOrder, setSortOrder] = useState('desc');
 
   // Modal handlers
   const handleOpenModal = () => {
@@ -84,21 +88,7 @@ export default function ProjectList() {
   });
 
   // Sort logic
-  const sortedProjects = [...filteredProjects].sort((a, b) => {
-    let fieldA = a[sortBy] || '';
-    let fieldB = b[sortBy] || '';
-    if (sortBy === 'createdOn') {
-      const partsA = fieldA.split('/');
-      const partsB = fieldB.split('/');
-      if (partsA.length === 3 && partsB.length === 3) {
-        fieldA = new Date(partsA[2], partsA[1] - 1, partsA[0]).getTime();
-        fieldB = new Date(partsB[2], partsB[1] - 1, partsB[0]).getTime();
-      }
-    }
-    if (fieldA < fieldB) return sortOrder === 'asc' ? -1 : 1;
-    if (fieldA > fieldB) return sortOrder === 'asc' ? 1 : -1;
-    return 0;
-  });
+  const sortedProjects = sortRows(filteredProjects, prefs.sortColumn, prefs.sort.order);
 
   const clearFilters = () => {
     setFilterId('');
@@ -152,12 +142,8 @@ export default function ProjectList() {
           <button onClick={() => setShowFilters(!showFilters)} style={{ ...buttonStyle, backgroundColor: showFilters ? 'var(--surface-gray-2, #f3f4f6)' : 'var(--control-bg, #ffffff)' }}>
             <Filter size={14} /> Filter
           </button>
-          <button style={buttonStyle}>
-            <ArrowUpDown size={14} /> Sort
-          </button>
-          <button style={buttonStyle}>
-            <Columns size={14} /> Columns
-          </button>
+          <SortMenu columns={PROJECT_COLUMNS} sort={prefs.sort} onChange={prefs.setSort} />
+          <ColumnsMenu columns={PROJECT_COLUMNS} visibleSet={prefs.visibleSet} onToggle={prefs.toggleColumn} onReset={prefs.resetColumns} disabled={view === 'kanban'} disabledHint="Columns apply to the list view" />
           <button style={{ ...buttonStyle, padding: '6px 8px' }}>
             <MoreHorizontal size={14} />
           </button>
@@ -170,7 +156,7 @@ export default function ProjectList() {
 
       {/* ─── Expandable Filter Bar ─── */}
       {showFilters && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '8px', backgroundColor: 'var(--surface-gray-1, #f9fafb)', borderBottom: '1px solid var(--border-color, #e5e7eb)', padding: '12px 24px', alignItems: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '8px', backgroundColor: 'var(--surface-gray-1, #f9fafb)', borderBottom: '1px solid var(--border-color, #e5e7eb)', padding: '12px 24px', alignItems: 'center' }}>
           <input placeholder="ID" value={filterId} onChange={e => setFilterId(e.target.value)} style={inputStyle} />
           <input placeholder="Project Name" value={filterName} onChange={e => setFilterName(e.target.value)} style={inputStyle} />
           <select disabled={view === 'kanban' && pipeline.id === 'status'} title={view === 'kanban' && pipeline.id === 'status' ? 'The board columns are the statuses' : undefined} value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setStatusTouched(true); }} style={inputStyle}>
@@ -190,12 +176,6 @@ export default function ProjectList() {
           <button onClick={clearFilters} style={{ ...buttonStyle, width: '100%', justifyContent: 'center' }}>
             <Filter size={13} /> Clear Filters
           </button>
-          <select value={`${sortBy}:${sortOrder}`} onChange={e => { const [field, order] = e.target.value.split(':'); setSortBy(field); setSortOrder(order); }} style={inputStyle}>
-            <option value="createdOn:desc">Created On ↓</option>
-            <option value="createdOn:asc">Created On ↑</option>
-            <option value="projectName:asc">Name A-Z</option>
-            <option value="projectName:desc">Name Z-A</option>
-          </select>
         </div>
       )}
 
@@ -226,54 +206,14 @@ export default function ProjectList() {
             </button>
           </div>
         ) : (
-          <div style={{ overflowX: 'auto', padding: '0 24px' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border-color, #e5e7eb)', color: 'var(--text-muted, #6b7280)' }}>
-                  <th style={{ padding: '12px 0 12px 8px', width: '30px', textAlign: 'center' }}><input type="checkbox" checked={sortedProjects.length > 0 && sortedProjects.every(r => selection.has(r.id))} onChange={e => selection.toggleAll(sortedProjects.map(r => r.id), e.target.checked)} style={{ cursor: 'pointer', accentColor: 'var(--gray-900, #111827)' }} /></th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>ID</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PROJECT NAME</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>STATUS</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PROJECT TYPE</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>PRIORITY</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>CREATED ON</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sortedProjects.map(proj => (
-                  <tr 
-                    key={proj.id} 
-                    onClick={() => navigate(`/projects/project/${proj.id}`)}
-                    style={{ borderBottom: '1px solid var(--border-color, #f3f4f6)', cursor: 'pointer', transition: 'background-color 0.15s' }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--surface-gray-1, #f9fafb)'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                  >
-                    <td style={{ padding: '12px 0 12px 8px', textAlign: 'center' }} onClick={e => e.stopPropagation()}>
-                      <input type="checkbox" checked={selection.has(proj.id)} onChange={() => selection.toggle(proj.id)} style={{ cursor: 'pointer', accentColor: 'var(--gray-900, #111827)' }} />
-                    </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-color, #1a1a1a)', fontWeight: 500 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: '24px', height: '24px', backgroundColor: 'var(--surface-gray-1, #f9fafb)', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <FileText size={12} color="var(--text-muted, #6b7280)" />
-                        </div>
-                        {proj.id}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-color, #1a1a1a)' }}>{proj.projectName}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 500, backgroundColor: proj.status === 'Open' ? 'var(--st-blue-bg)' : proj.status === 'Completed' ? 'var(--st-green-bg)' : 'var(--st-red-bg)', color: proj.status === 'Open' ? 'var(--st-blue-fg)' : proj.status === 'Completed' ? 'var(--st-green-fg)' : 'var(--st-red-fg)' }}>
-                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: proj.status === 'Open' ? '#3b82f6' : proj.status === 'Completed' ? '#22c55e' : '#ef4444' }}></div>
-                        {proj.status}
-                      </div>
-                    </td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-muted, #6b7280)' }}>{proj.projectType || '—'}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-muted, #6b7280)' }}>{proj.priority || '—'}</td>
-                    <td style={{ padding: '12px 16px', color: 'var(--text-muted, #6b7280)' }}>{proj.createdOn}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <RecordTable
+            columns={prefs.visibleColumns}
+            rows={sortedProjects}
+            selection={selection}
+            onOpen={r => navigate(`/projects/project/${r.id}`)}
+            sort={prefs.sort}
+            onSort={key => prefs.setSort({ key, order: prefs.sort.key === key && prefs.sort.order === 'asc' ? 'desc' : 'asc' })}
+          />
         )}
       </div>
 
