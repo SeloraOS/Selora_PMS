@@ -7,7 +7,7 @@ import { useSetup } from '../../context/SetupContext';
 import { entryRows, todayStr } from '../../lib/reportData';
 import { addDays } from '../../lib/dates';
 import {
-  TYPES, TYPE_LABELS, buildEvents, groupByDay, monthGrid, weekDays, rangeFor, addMonths, daysBetween, shiftTask,
+  TYPES, TYPE_LABELS, buildEvents, groupByDay, monthGrid, weekDays, rangeFor, addMonths, daysBetween, shiftTask, weekdayIndex,
 } from '../../lib/calendar';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -37,7 +37,7 @@ function tone(ev) {
   return ['rgba(236,72,153,0.16)', 'var(--text-color)'];
 }
 
-const chipBase = { display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', lineHeight: 1.3, padding: '2px 6px', borderRadius: '4px', marginBottom: '2px', cursor: 'pointer', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', boxSizing: 'border-box' };
+const chipBase = { display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', lineHeight: 1.35, padding: '4px 8px', borderRadius: '5px', marginBottom: '5px', cursor: 'pointer', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', boxSizing: 'border-box' };
 
 function ChipBody({ ev }) {
   const Icon = ev.type === 'timesheet' ? Clock : ev.type === 'project' ? Flag : ev.type === 'update' ? MessageSquare : null;
@@ -76,7 +76,8 @@ function Chip({ ev, index, onOpen }) {
 
 function DayCell({ day, events, today, inMonth = true, maxChips, tall, onCreate, onOpen, onMore }) {
   const holiday = events.find((e) => e.type === 'holiday');
-  const rest = events.filter((e) => e.type !== 'holiday');
+  // Month view: a multi-day task is drawn on its first and last day and at the start of each week, not on every day in between
+  const rest = events.filter((e) => e.type !== 'holiday' && !(maxChips && e.type === 'task' && !e.isStart && !e.isEnd && weekdayIndex(day) !== 0));
   const shown = maxChips ? rest.slice(0, maxChips) : rest;
   const hidden = rest.length - shown.length;
   const isToday = day === today;
@@ -88,17 +89,17 @@ function DayCell({ day, events, today, inMonth = true, maxChips, tall, onCreate,
         <div
           ref={p.innerRef} {...p.droppableProps} data-testid={`cal-day-${day}`}
           onClick={() => onCreate(day)}
-          style={{ minHeight: tall ? '320px' : '112px', padding: '4px', cursor: 'pointer', boxSizing: 'border-box', minWidth: 0,
+          style={{ minHeight: tall ? '380px' : '150px', padding: '8px', cursor: 'pointer', boxSizing: 'border-box', minWidth: 0,
             background: snap.isDraggingOver ? 'var(--surface-gray-3)' : holiday ? 'rgba(236,72,153,0.10)' : weekend ? 'var(--surface-gray-1)' : 'var(--card-bg)', opacity: inMonth ? 1 : 0.55 }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-            <span style={{ fontSize: '12px', fontWeight: isToday ? 700 : 500, width: '22px', height: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: isToday ? 'var(--gray-900)' : 'transparent', color: isToday ? '#ffffff' : 'var(--text-color)' }}>{Number(day.slice(8))}</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <span style={{ fontSize: '13px', fontWeight: isToday ? 700 : 500, width: '24px', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', background: isToday ? 'var(--gray-900)' : 'transparent', color: isToday ? '#ffffff' : 'var(--text-color)' }}>{Number(day.slice(8))}</span>
             {holiday && <span title={holiday.title} style={{ fontSize: '10px', color: 'var(--text-color)', maxWidth: '80%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>🎉 {holiday.title}</span>}
           </div>
           {shown.map((ev) => <Chip key={ev.key} ev={ev} index={ev.type === 'task' ? taskIndex++ : 0} onOpen={onOpen} />)}
           {p.placeholder}
           {hidden > 0 && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onMore(day); }} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', fontSize: '11px', cursor: 'pointer', padding: '0 4px' }}>+{hidden} more</button>
+            <button type="button" onClick={(e) => { e.stopPropagation(); onMore(day); }} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', fontSize: '12px', cursor: 'pointer', padding: '2px 4px' }}>+{hidden} more</button>
           )}
         </div>
       )}
@@ -212,7 +213,7 @@ export default function Calendar() {
         {!settings?.holiday_list && <span style={{ fontSize: '12px', color: 'var(--text-muted)', alignSelf: 'center' }}>Pick a default holiday list in Project Settings to see holidays.</span>}
       </div>
 
-      <div style={{ padding: '16px 24px', flex: 1 }}>
+      <div style={{ padding: '20px 28px', flex: 1 }}>
         {view === 'agenda' ? (
           <div data-testid="cal-agenda" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {empty && <div style={{ color: 'var(--text-muted)', fontSize: '14px', padding: '40px', textAlign: 'center' }}>Nothing scheduled this month with the current filters.</div>}
@@ -235,9 +236,9 @@ export default function Calendar() {
           </div>
         ) : (
           <DragDropContext onDragEnd={onDragEnd}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '1px', background: 'var(--border-color)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '1px', background: 'var(--border-color)', border: '1px solid var(--border-color)', borderRadius: '10px', overflow: 'hidden' }}>
               {WEEKDAYS.map((w, i) => (
-                <div key={w} style={{ padding: '6px 8px', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', background: 'var(--surface-gray-1)', color: 'var(--text-muted)' }}>
+                <div key={w} style={{ padding: '10px 12px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', background: 'var(--surface-gray-1)', color: 'var(--text-muted)' }}>
                   {w}{view === 'week' ? ` ${Number(weekDays(cursor)[i].slice(8))}` : ''}
                 </div>
               ))}
