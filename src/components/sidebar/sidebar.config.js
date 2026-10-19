@@ -56,13 +56,6 @@ export const PROJECTS_SIDEBAR_CONFIG = {
       internalOnly: true,
     },
     {
-      key: 'gantt',
-      label: 'Gantt',
-      icon: 'BarChart3',
-      route: '/projects/gantt',
-      internalOnly: true,
-    },
-    {
       key: 'calendar',
       label: 'Calendar',
       icon: 'CalendarDays',

@@ -40,7 +40,6 @@ import AccountingExport from './modules/projects/finance/AccountingExport';
 import MaterialRequests from './modules/projects/finance/MaterialRequests';
 import Approvals from './modules/projects/site/Approvals';
 import Snags from './modules/projects/site/Snags';
-import Gantt from './modules/projects/site/Gantt';
 import { DailyReportList, DailyReportForm } from './modules/projects/site/DailyReports';
 import { Trades, SnagCategories } from './modules/projects/site/Lookups';
 import DelayedTasksSummary from './modules/projects/reports/DelayedTasksSummary';
@@ -79,6 +78,12 @@ function RequireAuth({ children }) {
 function InternalOnly({ children }) {
   const { isExternal } = useAuth();
   return isExternal ? <Navigate to="/projects" replace /> : children;
+}
+
+/** The Gantt chart now lives in the Task page (third view); old links open it there. */
+function GanttRedirect() {
+  try { localStorage.setItem('selora-view:task', 'gantt'); } catch { /* storage unavailable */ }
+  return <Navigate to="/projects/task" replace />;
 }
 
 /** Clients cannot file daily reports. */
@@ -150,7 +155,7 @@ export default function App() {
             <Route path="projects/ra-bills" element={<NoClient><RABills /></NoClient>} />
             <Route path="projects/snags" element={<Snags />} />
             <Route path="projects/approvals" element={<InternalOnly><Approvals /></InternalOnly>} />
-            <Route path="projects/gantt" element={<InternalOnly><Gantt /></InternalOnly>} />
+            <Route path="projects/gantt" element={<InternalOnly><GanttRedirect /></InternalOnly>} />
             <Route path="projects/setup/trades" element={<InternalOnly><Trades /></InternalOnly>} />
             <Route path="projects/setup/snag-categories" element={<InternalOnly><SnagCategories /></InternalOnly>} />
             <Route path="projects/calendar" element={<Calendar />} />

@@ -13,15 +13,18 @@ import { useSetup } from '../../context/SetupContext';
 import KanbanBoard from '../../components/shared/KanbanBoard';
 import { TaskCard } from './kanbanCards';
 import { todayStr } from '../../lib/reportData';
+import GanttChart from './site/GanttChart';
 import BulkDeleteButton from '../../components/shared/BulkDeleteButton';
 import { 
-  Filter, RefreshCw, Plus, CheckSquare, X
+  Filter, RefreshCw, Plus, CheckSquare, X, List, LayoutGrid, BarChart3
 } from 'lucide-react';
+
+const TASK_VIEWS = [{ id: 'list', label: 'List View', icon: List }, { id: 'kanban', label: 'Kanban View', icon: LayoutGrid }, { id: 'gantt', label: 'Gantt View', icon: BarChart3 }];
 
 export default function TaskList() {
   const navigate = useNavigate();
   const { projects, projectTasks, addProjectTask, deleteProjectTask, updateProjectTask } = useProjects();
-  const { view, setView, pipeline, setPipeline, pipelines } = useViewMode('task');
+  const { view, setView, pipeline, setPipeline, pipelines } = useViewMode('task', ['gantt']);
   const prefs = useListPrefs('task', TASK_COLUMNS, { key: 'createdOn', order: 'desc' });
   const { projectTypes } = useSetup();
   const pipelineCtx = { projects, projectTypes };
@@ -63,7 +66,7 @@ export default function TaskList() {
     return task.id.toLowerCase().includes(filterId.toLowerCase()) &&
            task.subject.toLowerCase().includes(filterSubject.toLowerCase()) &&
            (filterProject ? task.project === filterProject : true) &&
-           ((view === 'kanban' && (pipeline.id === 'status' || !statusTouched)) || !filterStatus || task.status === filterStatus) && // the board's columns are the statuses
+           (((view === 'kanban' && pipeline.id === 'status') || ((view === 'kanban' || view === 'gantt') && !statusTouched)) || !filterStatus || task.status === filterStatus) && // the board's columns are the statuses
            (filterPriority ? task.priority === filterPriority : true);
   });
 
@@ -80,7 +83,7 @@ export default function TaskList() {
       {/* ─── Top Action Bar ─── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', borderBottom: '1px solid var(--border-color, #e5e7eb)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <ViewMenu view={view} setView={setView} pipelines={pipelines} pipeline={pipeline} setPipeline={setPipeline} />
+          <ViewMenu views={TASK_VIEWS} view={view} setView={setView} pipelines={pipelines} pipeline={pipeline} setPipeline={setPipeline} />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -89,7 +92,7 @@ export default function TaskList() {
             <Filter size={14} /> Filter
           </button>
           <SortMenu columns={TASK_COLUMNS} sort={prefs.sort} onChange={prefs.setSort} />
-          <ColumnsMenu columns={TASK_COLUMNS} visibleSet={prefs.visibleSet} onToggle={prefs.toggleColumn} onReset={prefs.resetColumns} disabled={view === 'kanban'} disabledHint="Columns apply to the list view" />
+          <ColumnsMenu columns={TASK_COLUMNS} visibleSet={prefs.visibleSet} onToggle={prefs.toggleColumn} onReset={prefs.resetColumns} disabled={view !== 'list'} disabledHint="Columns apply to the list view" />
           <ExportMenu name="tasks" columns={prefs.visibleColumns} rows={sortedTasks} disabled={!sortedTasks.length} />
           <BulkDeleteButton rows={sortedTasks.filter(r => selection.has(r.id))} label="task" onDelete={deleteProjectTask} onDone={selection.clear} />
           <button onClick={handleOpenModal} style={{ backgroundColor: 'var(--gray-900, #111827)', border: '1px solid var(--gray-900, #111827)', color: '#ffffff', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
@@ -123,7 +126,9 @@ export default function TaskList() {
 
       {/* ─── Main Content / Table ─── */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', backgroundColor: 'var(--bg-color, #ffffff)' }}>
-        {view === 'kanban' ? (
+        {view === 'gantt' ? (
+          <GanttChart tasks={sortedTasks} project={filterProject} />
+        ) : view === 'kanban' ? (
           <KanbanBoard
             key={pipeline.id}
             columns={pipeline.columns(sortedTasks, pipelineCtx)}
