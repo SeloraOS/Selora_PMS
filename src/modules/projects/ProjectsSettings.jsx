@@ -2,38 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useSetup } from '../../context/SetupContext';
 import { useAuth } from '../../context/AuthContext';
 import { can } from '../../lib/permissions';
+import { card, cardTitle, control, Toggle, Row } from './settingsParts';
+import NotificationPanel from './NotificationPanel';
 
 const CURRENCIES = ['INR', 'USD', 'EUR', 'AED'];
-
-const card = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' };
-const cardTitle = { fontSize: '14px', fontWeight: 600, color: 'var(--text-color)', margin: '0 0 16px 0', paddingBottom: '10px', borderBottom: '1px solid var(--divider-color)' };
-const row = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f9fafb' };
-const control = { border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px 10px', fontSize: '13px', color: 'var(--text-color)', outline: 'none', backgroundColor: 'var(--card-bg)' };
-
-function Toggle({ isOn, onToggle, disabled }) {
-  return (
-    <div
-      onClick={disabled ? undefined : onToggle}
-      role="switch"
-      aria-checked={isOn}
-      style={{ width: '40px', height: '22px', borderRadius: '11px', background: isOn ? '#3b82f6' : 'var(--surface-gray-4)', cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.6 : 1, display: 'flex', alignItems: 'center', padding: '0 2px', transition: 'background 0.2s', boxSizing: 'border-box' }}
-    >
-      <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--card-bg)', transform: `translateX(${isOn ? '18px' : '0'})`, transition: 'transform 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} />
-    </div>
-  );
-}
-
-function Row({ title, hint, children }) {
-  return (
-    <div style={row}>
-      <div>
-        <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{title}</div>
-        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{hint}</div>
-      </div>
-      {children}
-    </div>
-  );
-}
 
 export default function ProjectsSettings() {
   const { settings, companies, holidayLists, loaded, saveSettings } = useSetup();
@@ -53,7 +25,8 @@ export default function ProjectsSettings() {
     const { company, currency, holiday_list, default_billing_rate, default_costing_rate, limit_timesheet, auto_close_tasks, task_alerts,
       members_see_all, default_project_role, client_can_comment, max_upload_mb, allowed_file_types, audit_retention_days, invite_only,
       dpr_required, dpr_cutoff_time, approval_warning_days, snag_default_due_days, working_days,
-      retention_percent, gst_rate, tds_rate, po_approval_limit, budget_overrun_alert_percent, payment_terms_days, fiscal_year_start_month, ra_bill_prefix } = form;
+      retention_percent, gst_rate, tds_rate, po_approval_limit, budget_overrun_alert_percent, payment_terms_days, fiscal_year_start_month, ra_bill_prefix,
+      email_from, notify_channels, notify_roles, digest_time, notify_overdue_tasks, notify_approvals, notify_bills, notify_dpr, notify_dry_run, whatsapp_enabled, whatsapp_numbers, company_logo, letterhead } = form;
     const ok = await saveSettings({
       company, currency, holiday_list: holiday_list || null,
       default_billing_rate: Number(default_billing_rate) || 0,
@@ -66,6 +39,9 @@ export default function ProjectsSettings() {
       dpr_required, dpr_cutoff_time: String(dpr_cutoff_time || '18:00').slice(0, 5),
       approval_warning_days: Math.min(365, Math.max(1, Number(approval_warning_days) || 30)),
       snag_default_due_days: Math.min(90, Math.max(1, Number(snag_default_due_days) || 7)),
+      email_from: String(email_from || '').trim(), notify_channels, notify_roles, digest_time: String(digest_time || '08:00').slice(0, 5),
+      notify_overdue_tasks, notify_approvals, notify_bills, notify_dpr, notify_dry_run, whatsapp_enabled,
+      whatsapp_numbers: String(whatsapp_numbers || '').replace(/[^0-9+,]/g, ''), company_logo: company_logo || null, letterhead: String(letterhead || '').slice(0, 2000),
       retention_percent: Math.min(100, Math.max(0, Number(retention_percent) || 0)),
       gst_rate: Math.min(100, Math.max(0, Number(gst_rate) || 0)),
       tds_rate: Math.min(100, Math.max(0, Number(tds_rate) || 0)),
@@ -217,6 +193,8 @@ export default function ProjectsSettings() {
             <input type="text" aria-label="RA bill prefix" maxLength={6} value={form.ra_bill_prefix} disabled={!editable} onChange={(e) => set('ra_bill_prefix', e.target.value)} style={{ ...control, width: '100px' }} />
           </Row>
         </div>
+
+        <NotificationPanel form={form} set={set} editable={editable} />
 
         {editable && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px' }}>

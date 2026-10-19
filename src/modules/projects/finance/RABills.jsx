@@ -7,14 +7,22 @@ import { useAuth } from '../../../context/AuthContext';
 import { formatINR } from '../../../lib/reportData';
 import { BILL_STATUS_LABELS } from '../../../lib/finance';
 import { FilesPanel } from '../../../components/shared/RecordPanels';
+import { brandedDocument, printDocument, raBillHtml } from '../../../lib/exportRows';
 import { control, fmtDate, Pill, BILL_COLOR } from './shared';
 
 const line = { display: 'flex', justifyContent: 'space-between', fontSize: '13px', padding: '3px 0' };
 
 /** Breakdown of the bill and its payments; staff record payments here. */
 function BillPanel({ bill }) {
-  const { payments, save, remove } = useFinance();
+  const { payments, save, remove, workOrders, vendors } = useFinance();
   const { isStaff } = useAuth();
+  const { projects } = useProjects();
+  const { settings } = useSetup();
+  const printBill = () => {
+    const doc = brandedDocument({ title: `RA bill ${bill.code}`, brand: { company: settings?.company, letterhead: settings?.letterhead, logo: settings?.company_logo },
+      bodyHtml: raBillHtml({ bill, workOrder: workOrders.find((w) => w.id === bill.work_order_id), vendor: vendors.find((v) => v.id === bill.vendor_id), project: projects.find((p) => p.dbId === bill.project_id)?.projectName || '' }) });
+    if (!printDocument(doc)) window.alert('The browser blocked the print window. Allow pop-ups for this site.');
+  };
   const mine = payments.filter((p) => p.bill_id === bill.id);
   const [amount, setAmount] = useState('');
   const [mode, setMode] = useState('Bank transfer');
@@ -35,6 +43,7 @@ function BillPanel({ bill }) {
         <div style={line}><span>Paid</span><span>{formatINR(paid)}</span></div>
         <div style={line}><span>Balance</span><span>{formatINR(net - paid)}</span></div>
       </div>
+      <button type="button" onClick={printBill} style={{ ...control, alignSelf: 'flex-start', cursor: 'pointer' }}>Print bill / PDF</button>
       <div style={{ fontSize: '13px', fontWeight: 600 }}>Payments ({mine.length})</div>
       {mine.map((p) => (
         <div key={p.id} data-testid="payment-row" style={{ ...line, alignItems: 'center' }}>

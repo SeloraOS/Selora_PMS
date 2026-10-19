@@ -6,7 +6,7 @@ import { useProjects } from '../../../context/ProjectsContext';
 import { useFinance } from '../../../context/FinanceContext';
 import { totals } from '../../../lib/finance';
 import { entryRows, projectCosts, formatINR, compactINR } from '../../../lib/reportData';
-import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv } from '../../../components/shared/ReportParts';
+import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv, downloadXls } from '../../../components/shared/ReportParts';
 
 export default function ProjectWiseCost() {
   const chart = useChartTheme();
@@ -39,7 +39,7 @@ export default function ProjectWiseCost() {
 
   return (
     <ReportPage>
-      <ReportHeader title="Project wise Cost" onExport={() => downloadCsv('project-wise-cost.csv', columns, rows)} />
+      <ReportHeader title="Project wise Cost" onExport={() => downloadCsv('project-wise-cost.csv', columns, rows)} onExcel={() => downloadXls('project-wise-cost.csv', columns, rows)} />
       {over.length > 0 && (
         <div style={{ background: 'var(--st-amber-bg)', border: '1px solid var(--st-amber-fg)', borderRadius: '8px', padding: '10px 14px', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--st-amber-fg)' }}>
           <AlertTriangle size={16} /> {over.length} project{over.length > 1 ? 's are' : ' is'} over the estimated cost: {over.map((o) => o.name).join(', ')}

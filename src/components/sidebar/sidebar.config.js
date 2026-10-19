@@ -75,6 +75,8 @@ export const PROJECTS_SIDEBAR_CONFIG = {
     { key: 'workOrders', label: 'Work Orders', icon: 'FileText', route: '/projects/work-orders', noClient: true },
     { key: 'raBills', label: 'RA Bills', icon: 'Receipt', route: '/projects/ra-bills', noClient: true },
     { key: 'vendors', label: 'Vendors', icon: 'Store', route: '/projects/vendors', internalOnly: true },
+    { key: 'demandLetter', label: 'Demand Letter', icon: 'Mail', route: '/projects/demand-letter', internalOnly: true },
+    { key: 'accountingExport', label: 'Accounting Export', icon: 'FileSpreadsheet', route: '/projects/accounting-export', internalOnly: true },
     { key: 'materialRequests', label: 'Material Requests', icon: 'Package', route: '/projects/material-requests', internalOnly: true },
   ],
   setup: [

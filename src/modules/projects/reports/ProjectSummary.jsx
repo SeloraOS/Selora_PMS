@@ -3,7 +3,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveCo
 import { useChartTheme } from '../../../lib/useChartTheme';
 import { useProjects } from '../../../context/ProjectsContext';
 import { countBy, projectProgress, isClosed, formatINR } from '../../../lib/reportData';
-import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv } from '../../../components/shared/ReportParts';
+import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv, downloadXls } from '../../../components/shared/ReportParts';
 
 const STATUS_COLORS = { Open: '#3b82f6', Completed: '#22c55e', Cancelled: '#ef4444' };
 const FALLBACK = ['#f59e0b', '#7c3aed', '#14b8a6', '#ec4899'];
@@ -39,7 +39,7 @@ export default function ProjectSummary() {
 
   return (
     <ReportPage>
-      <ReportHeader title="Project Summary" onExport={() => downloadCsv('project-summary.csv', columns, rows)} />
+      <ReportHeader title="Project Summary" onExport={() => downloadCsv('project-summary.csv', columns, rows)} onExcel={() => downloadXls('project-summary.csv', columns, rows)} />
       <StatRow>
         <StatCard label="Total Projects" value={projects.length} />
         <StatCard label="Open" value={projects.filter((p) => p.status === 'Open').length} />

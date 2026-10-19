@@ -3,7 +3,7 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveCo
 import { useChartTheme } from '../../../lib/useChartTheme';
 import { useProjects } from '../../../context/ProjectsContext';
 import { delayedTasks, delayBuckets, countBy, todayStr } from '../../../lib/reportData';
-import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv } from '../../../components/shared/ReportParts';
+import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv, downloadXls } from '../../../components/shared/ReportParts';
 
 const fmtDate = (d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-GB') : '—');
 const delayColor = (days) => (days > 7 ? '#7c3aed' : days >= 4 ? '#ef4444' : '#f59e0b');
@@ -28,7 +28,7 @@ export default function DelayedTasksSummary() {
 
   return (
     <ReportPage>
-      <ReportHeader title="Delayed Tasks Summary" onExport={() => downloadCsv('delayed-tasks.csv', columns, delayed)} />
+      <ReportHeader title="Delayed Tasks Summary" onExport={() => downloadCsv('delayed-tasks.csv', columns, delayed)} onExcel={() => downloadXls('delayed-tasks.csv', columns, delayed)} />
       <StatRow>
         <StatCard label="Total Delayed" value={delayed.length} />
         <StatCard label="Critical (>7 days)" value={delayed.filter((d) => d.delayDays > 7).length} />

@@ -7,7 +7,7 @@ import { useProjects } from '../../../context/ProjectsContext';
 import { useSetup } from '../../../context/SetupContext';
 import { formatINR, compactINR, todayStr } from '../../../lib/reportData';
 import { budgetHealth, totals, sCurve, cashFlow, fiscalYear } from '../../../lib/finance';
-import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv } from '../../../components/shared/ReportParts';
+import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv, downloadXls } from '../../../components/shared/ReportParts';
 import { control } from './shared';
 
 export default function FinanceDashboard() {
@@ -46,7 +46,7 @@ export default function FinanceDashboard() {
 
   return (
     <ReportPage>
-      <ReportHeader title={`Finance · ${fy.label}`} onExport={() => downloadCsv('finance-by-project.csv', columns, byProject)}>
+      <ReportHeader title={`Finance · ${fy.label}`} onExport={() => downloadCsv('finance-by-project.csv', columns, byProject)} onExcel={() => downloadXls('finance-by-project.csv', columns, byProject)}>
         <select aria-label="Project" value={projectId} onChange={(e) => setProjectId(e.target.value)} style={control}>
           <option value="">All projects</option>
           {projects.map((p) => <option key={p.dbId} value={p.dbId}>{p.projectName}</option>)}

@@ -201,6 +201,30 @@ try {
   await admin.from('vendors').delete().in('id', [vend.id, vend2.id]);
 
 
+  // ── phase 5: notifications, calendar feed, tokens ───────────────────────────
+  const callFn = async (who, name, body) => { const { data: { session } } = await who.c.auth.getSession(); const r = await fetch(`${URL_}/functions/v1/${name}`, { method: 'POST', headers: { apikey: ANON, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return { status: r.status, body: await r.json().catch(() => ({})) }; };
+  const st = await callFn(manager, 'notify', { action: 'status' });
+  check('manager can read the notification server status', st.status === 200 && typeof st.body.smtp === 'boolean');
+  check('member cannot call notify (403)', (await callFn(member, 'notify', { action: 'status' })).status === 403);
+  check('client cannot call notify (403)', (await callFn(client, 'notify', { action: 'run', dry_run: true })).status === 403);
+  const noAuth = await fetch(`${URL_}/functions/v1/notify`, { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: '{"action":"status"}' });
+  check('notify without a session is rejected', noAuth.status === 403);
+  const dry = await callFn(manager, 'notify', { action: 'run', dry_run: true });
+  check('dry run returns a digest and delivers nothing', dry.status === 200 && dry.body.dry_run === true && dry.body.results.every((x) => x.status === 'dry_run'), JSON.stringify(dry.body).slice(0, 100));
+  const { data: tokRow } = await admin.from('pm_settings').select('ics_token').single();
+  const feed = await fetch(`${URL_}/functions/v1/calendar-feed?token=${tokRow.ics_token}`);
+  const feedText = await feed.text();
+  check('calendar feed with the token returns iCalendar', feed.status === 200 && feedText.startsWith('BEGIN:VCALENDAR') && feedText.includes('BEGIN:VEVENT'));
+  check('calendar feed with a wrong token is 404', (await fetch(`${URL_}/functions/v1/calendar-feed?token=wrong`)).status === 404);
+  check('calendar feed without a token is 404', (await fetch(`${URL_}/functions/v1/calendar-feed`)).status === 404);
+  check('client cannot read the notification log', (await client.c.from('notification_log').select('id')).data?.length === 0);
+  check('manager can read the notification log', !(await manager.c.from('notification_log').select('id').limit(1)).error);
+  check('manager cannot write the notification log', !!(await manager.c.from('notification_log').insert({ channel: 'email', recipient: 'x@y.z', status: 'sent' })).error);
+  check('member cannot rotate the calendar token', !!(await member.c.rpc('rotate_ics_token')).error);
+  check('invalid notification settings are rejected', !!(await admin.from('pm_settings').update({ notify_channels: 'sms' }).eq('id', true)).error);
+  check('oversized logo is rejected', !!(await admin.from('pm_settings').update({ company_logo: 'data:image/png;base64,' + 'A'.repeat(450000) }).eq('id', true)).error);
+
+
   // ── outsider (client without membership) ────────────────────────────────────
   check('outsider sees no projects', mine(await outsider.c.from('projects').select('id')).length === 0);
   check('outsider sees none of the tasks', (await outsider.c.from('project_tasks').select('id').in('id', [tA1.id, tA2.id, tB1.id])).data?.length === 0);

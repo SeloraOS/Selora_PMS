@@ -1,5 +1,6 @@
 import React from 'react';
-import { ArrowUpDown, Columns, ChevronDown, Check, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUpDown, Columns, ChevronDown, Check, ArrowUp, ArrowDown, Download } from 'lucide-react';
+import { downloadCsvFile, downloadXlsFile } from '../../lib/exportRows';
 import { useDropdown } from '../../lib/useDropdown';
 
 const button = { backgroundColor: 'var(--control-bg, #ffffff)', border: '1px solid var(--border-color, #e5e7eb)', color: 'var(--text-muted, #4b5563)', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontFamily: 'inherit' };
@@ -60,6 +61,26 @@ export function ColumnsMenu({ columns, visibleSet, onToggle, onReset, disabled, 
           <div style={{ borderTop: '1px solid var(--border-color, #e5e7eb)', marginTop: '6px', padding: '6px 4px 2px' }}>
             <button type="button" onClick={onReset} style={{ ...row(false), color: 'var(--text-muted, #6b7280)' }}>Reset to default</button>
           </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** "Export" button: the rows currently shown, as CSV or Excel. */
+export function ExportMenu({ name, columns, rows, disabled }) {
+  const { open, setOpen, ref } = useDropdown();
+  const run = (fn) => { fn(name, columns, rows); setOpen(false); };
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button type="button" aria-haspopup="menu" aria-expanded={open} disabled={disabled} onClick={() => setOpen(!open)} style={{ ...button, opacity: disabled ? 0.6 : 1 }}>
+        <Download size={14} /> Export <ChevronDown size={14} style={{ color: 'var(--text-muted, #9ca3af)' }} />
+      </button>
+      {open && (
+        <div role="menu" aria-label="Export" style={{ ...menu, minWidth: '170px' }}>
+          <div style={heading}>{rows.length} row{rows.length === 1 ? '' : 's'}</div>
+          <button type="button" role="menuitem" style={row(false)} onClick={() => run(downloadCsvFile)}>CSV (.csv)</button>
+          <button type="button" role="menuitem" style={row(false)} onClick={() => run(downloadXlsFile)}>Excel (.xls)</button>
         </div>
       )}
     </div>

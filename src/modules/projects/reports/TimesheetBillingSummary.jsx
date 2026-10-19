@@ -3,7 +3,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContai
 import { useChartTheme } from '../../../lib/useChartTheme';
 import { useProjects } from '../../../context/ProjectsContext';
 import { entryRows, hoursBy, monthlyTotals, todayStr, formatINR, compactINR } from '../../../lib/reportData';
-import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv } from '../../../components/shared/ReportParts';
+import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv, downloadXls } from '../../../components/shared/ReportParts';
 
 export default function TimesheetBillingSummary() {
   const chart = useChartTheme();
@@ -27,7 +27,7 @@ export default function TimesheetBillingSummary() {
 
   return (
     <ReportPage>
-      <ReportHeader title="Timesheet Billing Summary" onExport={() => downloadCsv('timesheet-billing.csv', columns, rows)} />
+      <ReportHeader title="Timesheet Billing Summary" onExport={() => downloadCsv('timesheet-billing.csv', columns, rows)} onExcel={() => downloadXls('timesheet-billing.csv', columns, rows)} />
       <StatRow>
         <StatCard label="Total Billing" value={formatINR(billing)} />
         <StatCard label="Total Costing" value={formatINR(costing)} />

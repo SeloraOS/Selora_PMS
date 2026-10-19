@@ -126,5 +126,13 @@ begin
   select count(*) into n from pg_policies where schemaname = 'public' and tablename in ('vendors','budgets','work_orders','ra_bills','payments','material_requests','cost_heads') and roles::text like '%anon%';
   if n > 0 then raise exception 'finance policies must not apply to anon'; end if;
 
+  -- phase 5: notification log is staff-only; settings constraints; feed token present
+  select count(*) into n from pg_policies where schemaname = 'public' and tablename = 'notification_log' and cmd <> 'SELECT';
+  if n > 0 then raise exception 'notification_log must be written by the service role only'; end if;
+  select count(*) into n from public.pm_settings where length(coalesce(ics_token, '')) < 16;
+  if n > 0 then raise exception 'calendar feed token missing'; end if;
+  select count(*) into n from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'notification_log';
+  if n <> 1 then raise exception 'notification_log not in realtime'; end if;
+
   raise notice 'verify.sql: all checks passed';
 end $$;

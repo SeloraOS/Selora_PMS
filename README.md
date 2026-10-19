@@ -75,6 +75,27 @@ Migrations `0026`-`0029` (additive): `cost_heads`, `vendors`, `budgets` (+ `budg
 - **Material requests** (lite): item, quantity, needed by, status.
 - **Settings (Projects Settings > Finance):** retention %, GST %, TDS %, approval limit, budget warning %, payment terms, financial-year start month, RA bill prefix.
 
+## Scale and polish (beta, Phase 5)
+
+Migration `0030` (additive): notification settings, `notification_log`, branding columns, the calendar-feed token and `rotate_ics_token()`. Edge Functions: `notify`, `calendar-feed` (deploy with `./scripts/deploy-functions.sh`). Not included on purpose: AI assist, multi-tenancy, native apps.
+
+- **Role dashboards** (`/projects`): admins and managers get an owner view (budget committed, billed-not-paid, overdue payables, budget lines at risk, overdue tasks, expiring approvals, open snags, missing daily reports); internal members get a site view (my tasks, overdue, my snags, reports still to file); clients and contractors keep the portal home.
+- **Exports:** every list has Export > CSV / Excel for the rows currently shown (CSV cells starting with `=`, `+`, `-` or `@` are neutralised); reports have CSV, Excel and Print / PDF. RA bills ("Print bill / PDF") and the Demand Letter page print on the company letterhead and logo (Projects Settings > Branding) through the browser's print dialog; choose "Save as PDF". Pop-ups must be allowed.
+- **Accounting export** (`/projects/accounting-export`): Tally Prime import XML (purchase vouchers with GST input, TDS and retention, payment vouchers), Zoho Books bills CSV and a payments CSV for a date range (defaults to the financial year). Ledger names must exist in the accounting software (vendor name, cost head, `GST Input`, `TDS Payable`, `Retention Payable`, `Bank Account`, `Cash`). The XML follows the Tally voucher import format but has not been imported into a real Tally here.
+- **Calendar feed** (Projects Settings > Branding & integrations): an ICS link with a secret token (tasks, project dates, approval expiries, snag due dates, holidays) for Google/Outlook/Apple Calendar. Anyone with the link can read it; "New link" invalidates the old one.
+- **Notifications:** a daily digest (overdue tasks, expiring approvals, bills due, missing daily reports) by e-mail and/or a WhatsApp webhook. Everything is off until configured: channels, recipients, sender, digest time, the four content toggles, WhatsApp numbers and a Dry run switch are in Projects Settings > Notifications, which also shows whether the server has credentials and offers "Preview (dry run)" and "Send now". Delivery is once per recipient, channel and day (`notification_log`).
+
+Server setup for notifications (secrets are Edge Function environment variables, never stored in the database or the browser):
+
+1. `./scripts/deploy-functions.sh` copies `notify`, `calendar-feed` and `invite-user` to `/srv/supabase-pms/volumes/functions/`.
+2. The functions service passes `NOTIFY_*` variables through (already added to `/srv/supabase-pms/docker-compose.yml`; backup `docker-compose.yml.bak.*`). Put the values in `/srv/supabase-pms/.env` and run `docker compose up -d functions`:
+   `NOTIFY_SMTP_HOST`, `NOTIFY_SMTP_PORT` (465 = TLS, otherwise STARTTLS when offered), `NOTIFY_SMTP_USER`, `NOTIFY_SMTP_PASS`, `NOTIFY_SMTP_FROM`, `NOTIFY_WHATSAPP_URL`, `NOTIFY_WHATSAPP_TOKEN` (the webhook receives `POST {to, message}` with `Authorization: Bearer <token>`), optional `NOTIFY_TZ_OFFSET_MINUTES` (default 330).
+3. Schedule it on the VPS (the function honours the Dry run switch):
+   `0 8 * * * curl -s -X POST https://supabase-pms.seloraos.online/functions/v1/notify -H "apikey: <anon key>" -H "Authorization: Bearer <service role key>" -H "Content-Type: application/json" -d '{"action":"run"}'`
+   (keep the key in a root-only file, not in the crontab line).
+
+Verified here against fake servers: SMTP over a plain connection with AUTH LOGIN, the WhatsApp webhook, once-a-day delivery, the dry-run path and the "not configured" path. Not verified: TLS/STARTTLS against a real mail server, a real WhatsApp provider, real Tally import.
+
 ## Tests and verification
 
     npm test          # unit tests: report aggregation, rates, field mappers

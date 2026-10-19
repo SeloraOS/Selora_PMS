@@ -4,7 +4,7 @@ import { useProjects } from '../../context/ProjectsContext';
 import { useSelection } from '../../lib/useSelection';
 import { useViewMode } from '../../lib/useViewMode';
 import ViewMenu from '../../components/shared/ViewMenu';
-import { SortMenu, ColumnsMenu } from '../../components/shared/ListMenus';
+import { SortMenu, ColumnsMenu, ExportMenu } from '../../components/shared/ListMenus';
 import RecordTable from '../../components/shared/RecordTable';
 import { sortRows } from '../../lib/sortRows';
 import { useListPrefs } from '../../lib/useListPrefs';
@@ -65,6 +65,7 @@ export default function TimesheetList() {
           </button>
           <SortMenu columns={TIMESHEET_COLUMNS} sort={prefs.sort} onChange={prefs.setSort} />
           <ColumnsMenu columns={TIMESHEET_COLUMNS} visibleSet={prefs.visibleSet} onToggle={prefs.toggleColumn} onReset={prefs.resetColumns} disabled={view === 'kanban'} disabledHint="Columns apply to the list view" />
+          <ExportMenu name="timesheets" columns={prefs.visibleColumns} rows={sortedTimesheets} disabled={!sortedTimesheets.length} />
           <BulkDeleteButton rows={sortedTimesheets.filter(r => selection.has(r.id))} label="timesheet" onDelete={deleteTimesheet} onDone={selection.clear} />
           <button onClick={handleAddTimesheet} style={{ backgroundColor: 'var(--gray-900, #111827)', border: '1px solid var(--gray-900, #111827)', color: '#ffffff', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
             <Plus size={14} /> Add Timesheet

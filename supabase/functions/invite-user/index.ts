@@ -10,7 +10,7 @@
 const URL_ = Deno.env.get('SUPABASE_URL')!;
 const ANON = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const ALLOWED = (Deno.env.get('ALLOWED_ORIGINS') ?? 'https://pms.seloraos.online,http://localhost:5173').split(',').map((s) => s.trim());
+const ALLOWED = (Deno.env.get('ALLOWED_ORIGINS') || 'https://pms.seloraos.online,http://localhost:5173').split(',').map((s) => s.trim());
 
 const ROLES = ['member', 'client', 'contractor', 'manager', 'admin'];
 const PROJECT_ROLES = ['owner', 'staff', 'contractor', 'client', 'viewer'];

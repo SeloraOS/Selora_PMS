@@ -35,6 +35,8 @@ import WorkOrders from './modules/projects/finance/WorkOrders';
 import RABills from './modules/projects/finance/RABills';
 import Budgets from './modules/projects/finance/Budgets';
 import FinanceDashboard from './modules/projects/finance/FinanceDashboard';
+import DemandLetter from './modules/projects/finance/DemandLetter';
+import AccountingExport from './modules/projects/finance/AccountingExport';
 import MaterialRequests from './modules/projects/finance/MaterialRequests';
 import Approvals from './modules/projects/site/Approvals';
 import Snags from './modules/projects/site/Snags';
@@ -140,6 +142,8 @@ export default function App() {
             <Route path="projects/daily-report/:id" element={<NoClient><DailyReportForm /></NoClient>} />
             <Route path="projects/finance" element={<InternalOnly><FinanceDashboard /></InternalOnly>} />
             <Route path="projects/budgets" element={<InternalOnly><Budgets /></InternalOnly>} />
+            <Route path="projects/demand-letter" element={<InternalOnly><DemandLetter /></InternalOnly>} />
+            <Route path="projects/accounting-export" element={<InternalOnly><AccountingExport /></InternalOnly>} />
             <Route path="projects/vendors" element={<InternalOnly><Vendors /></InternalOnly>} />
             <Route path="projects/material-requests" element={<InternalOnly><MaterialRequests /></InternalOnly>} />
             <Route path="projects/work-orders" element={<NoClient><WorkOrders /></NoClient>} />

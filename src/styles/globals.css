@@ -344,3 +344,11 @@ html:not([data-theme="dark"]) [style*="fontSize: 20px"] { font-size: 23px !impor
 html:not([data-theme="dark"]) svg {
     stroke: currentColor;
 }
+
+/* Print / Save as PDF: only the page content, on white, without the chrome */
+@media print {
+  aside, header, .no-print, button, select { display: none !important; }
+  div[style*="margin-left"] { margin-left: 0 !important; }
+  div[style*="height: 100vh"], main { height: auto !important; overflow: visible !important; }
+  html, body { background: #ffffff !important; }
+}
