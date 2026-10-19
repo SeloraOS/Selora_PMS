@@ -50,12 +50,17 @@ export default function ProjectsSettings() {
 
   const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setStatus(''); };
   const save = async () => {
-    const { company, currency, holiday_list, default_billing_rate, default_costing_rate, limit_timesheet, auto_close_tasks, task_alerts } = form;
+    const { company, currency, holiday_list, default_billing_rate, default_costing_rate, limit_timesheet, auto_close_tasks, task_alerts,
+      members_see_all, default_project_role, client_can_comment, max_upload_mb, allowed_file_types, audit_retention_days, invite_only } = form;
     const ok = await saveSettings({
       company, currency, holiday_list: holiday_list || null,
       default_billing_rate: Number(default_billing_rate) || 0,
       default_costing_rate: Number(default_costing_rate) || 0,
       limit_timesheet, auto_close_tasks, task_alerts,
+      members_see_all, default_project_role, client_can_comment, invite_only,
+      max_upload_mb: Math.min(200, Math.max(1, Number(max_upload_mb) || 25)),
+      allowed_file_types: String(allowed_file_types || '').toLowerCase().replace(/[^a-z0-9,]/g, ''),
+      audit_retention_days: Math.min(3650, Math.max(30, Number(audit_retention_days) || 365)),
     });
     setStatus(ok ? 'Settings saved.' : '');
   };
@@ -107,6 +112,33 @@ export default function ProjectsSettings() {
           <h2 style={cardTitle}>Notifications</h2>
           <Row title="Task Overdue Alerts" hint="Show overdue and due-soon tasks in the notification drawer, sidebar badge and dashboard">
             <Toggle isOn={form.task_alerts} disabled={!editable} onToggle={() => set('task_alerts', !form.task_alerts)} />
+          </Row>
+        </div>
+
+        <div style={card}>
+          <h2 style={cardTitle}>Access &amp; Files</h2>
+          <Row title="Members see all projects" hint="Off: internal members only see projects they have been added to (staff always see everything)">
+            <Toggle isOn={form.members_see_all} disabled={!editable} onToggle={() => set('members_see_all', !form.members_see_all)} />
+          </Row>
+          <Row title="Default project role" hint="Role pre-selected when someone is added to a project">
+            <select value={form.default_project_role} disabled={!editable} onChange={(e) => set('default_project_role', e.target.value)} style={control}>
+              {['owner', 'staff', 'contractor', 'client', 'viewer'].map((r) => <option key={r}>{r}</option>)}
+            </select>
+          </Row>
+          <Row title="Clients can comment" hint="Clients may post comments on records shared with them">
+            <Toggle isOn={form.client_can_comment} disabled={!editable} onToggle={() => set('client_can_comment', !form.client_can_comment)} />
+          </Row>
+          <Row title="Maximum upload size (MB)" hint="Per file, 1 to 200">
+            <input type="number" min="1" max="200" value={form.max_upload_mb} disabled={!editable} onChange={(e) => set('max_upload_mb', e.target.value)} style={{ ...control, width: '100px', textAlign: 'right' }} />
+          </Row>
+          <Row title="Allowed file types" hint="Comma separated extensions, e.g. pdf,png,docx">
+            <input type="text" value={form.allowed_file_types} disabled={!editable} onChange={(e) => set('allowed_file_types', e.target.value)} style={{ ...control, width: '260px' }} />
+          </Row>
+          <Row title="Keep activity history (days)" hint="Older audit entries can be purged (30 to 3650)">
+            <input type="number" min="30" max="3650" value={form.audit_retention_days} disabled={!editable} onChange={(e) => set('audit_retention_days', e.target.value)} style={{ ...control, width: '100px', textAlign: 'right' }} />
+          </Row>
+          <Row title="Invitation-only accounts" hint="Policy flag. Public sign-up must also be switched off on the server (DISABLE_SIGNUP)">
+            <Toggle isOn={form.invite_only} disabled={!editable} onToggle={() => set('invite_only', !form.invite_only)} />
           </Row>
         </div>
 

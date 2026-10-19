@@ -16,6 +16,8 @@ const inputStyle = {
   outline: 'none',
 };
 
+const ALLOW_SIGNUP = import.meta.env.VITE_ALLOW_SIGNUP === 'true'; // accounts are normally created by invitation
+
 export default function Login() {
   const { user, loading, signIn, signUp } = useAuth();
   const [mode, setMode] = useState('signin');
@@ -68,9 +70,10 @@ export default function Login() {
           {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
         </button>
 
-        <button type="button" onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setInfo(''); }} style={{ background: 'none', border: 'none', color: '#7c7c7c', fontSize: '12px', cursor: 'pointer' }}>
+        {ALLOW_SIGNUP && <button type="button" onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setInfo(''); }} style={{ background: 'none', border: 'none', color: '#7c7c7c', fontSize: '12px', cursor: 'pointer' }}>
           {mode === 'signin' ? 'No account? Sign up' : 'Have an account? Sign in'}
-        </button>
+        </button>}
+        {!ALLOW_SIGNUP && <div style={{ fontSize: '11px', color: '#7c7c7c', textAlign: 'center' }}>Accounts are created by invitation. Ask your administrator.</div>}
       </form>
     </div>
   );

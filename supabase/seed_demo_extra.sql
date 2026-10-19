@@ -123,4 +123,8 @@ begin
 
   -- default holiday list shown on the calendar
   update public.pm_settings set holiday_list = 'Standard Corporate' where holiday_list is null;
+
+  -- Phase 1: portal-ready demo data
+  update public.project_users set project_role = 'staff' where project_role = 'viewer' and project_id in (select id from public.projects where created_by = u);
+  update public.project_updates set visibility = 'shared' where created_by = u and type in ('Progress','Milestone');
 end $$;

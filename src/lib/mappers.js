@@ -68,6 +68,7 @@ const PROJECT_SPEC = [
 
 const TASK_SPEC = [
   ['subject', 'subject', 'text'],
+  ['assigneeId', 'assignee_id', 'text'],
   ['isTemplate', 'is_template', 'yesno'],
   ['issue', 'issue', 'text'],
   ['type', 'type', 'text'],

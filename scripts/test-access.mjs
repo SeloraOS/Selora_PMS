@@ -1,0 +1,165 @@
+/**
+ * Role / project-membership tests against the live database (creates and removes throwaway users and projects).
+ *   SERVICE_ROLE_KEY=<key> npm run test:access
+ * The service-role key is only used here to create and delete the test users; it is never stored.
+ */
+import fs from 'node:fs';
+import { createClient } from '@supabase/supabase-js';
+
+const env = Object.fromEntries(fs.readFileSync(new URL('../.env.local', import.meta.url), 'utf8').split('\n').filter((l) => l.includes('=') && !l.startsWith('#')).map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]));
+const URL_ = env.VITE_SUPABASE_URL, ANON = env.VITE_SUPABASE_ANON_KEY, SERVICE = process.env.SERVICE_ROLE_KEY;
+if (!SERVICE) { console.error('SERVICE_ROLE_KEY is required'); process.exit(2); }
+
+const mk = () => createClient(URL_, ANON, { auth: { persistSession: false, autoRefreshToken: false } });
+const admin = createClient(URL_, SERVICE, { auth: { persistSession: false } });
+let failures = 0;
+const check = (name, ok, detail = '') => { if (!ok) failures++; console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? '  ' + detail : ''}`); };
+const stamp = Date.now();
+const created = { users: [], projects: [] };
+
+async function makeUser(label, role) {
+  const email = `t-${label}-${stamp}@selora-test.invalid`, password = `Tt!${stamp}-${label}`;
+  const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  if (error) throw error;
+  created.users.push(data.user.id);
+  if (role !== 'member') await admin.from('profiles').update({ role }).eq('id', data.user.id);
+  const c = mk();
+  const { error: e2 } = await c.auth.signInWithPassword({ email, password });
+  if (e2) throw e2;
+  return { c, id: data.user.id, email };
+}
+const ids = (r) => (r.data || []).map((x) => x.id);
+
+try {
+  // ── fixtures (as service role) ──────────────────────────────────────────────
+  const mkProject = async (name) => { const { data } = await admin.from('projects').insert({ project_name: `${name} ${stamp}` }).select('id, code').single(); created.projects.push(data.id); return data; };
+  const PA = await mkProject('Zz Access A'); const PB = await mkProject('Zz Access B');
+
+  const [manager, member, client, contractor, outsider] = await Promise.all([
+    makeUser('manager', 'manager'), makeUser('member', 'member'), makeUser('client', 'client'), makeUser('contractor', 'contractor'), makeUser('outsider', 'client'),
+  ]);
+  await admin.from('project_users').insert([
+    { project_id: PA.id, user_email: client.email, project_role: 'client' },
+    { project_id: PA.id, user_email: contractor.email, project_role: 'contractor' },
+  ]);
+  const { data: tA1 } = await admin.from('project_tasks').insert({ subject: 'A1 contractor task', project_id: PA.id, assignee_id: contractor.id }).select('id').single();
+  const { data: tA2 } = await admin.from('project_tasks').insert({ subject: 'A2 other task', project_id: PA.id }).select('id').single();
+  const { data: tB1 } = await admin.from('project_tasks').insert({ subject: 'B1 task', project_id: PB.id }).select('id').single();
+  const { data: uShared } = await admin.from('project_updates').insert({ project_id: PA.id, description: 'shared update', visibility: 'shared' }).select('id').single();
+  const { data: uInternal } = await admin.from('project_updates').insert({ project_id: PA.id, description: 'internal update', visibility: 'internal' }).select('id').single();
+  await admin.from('timesheets').insert({ project_id: PA.id, employee: 'Zz' });
+
+  // ── staff & members ─────────────────────────────────────────────────────────
+  const mine = (r) => ids(r).filter((i) => [PA.id, PB.id].includes(i));
+  check('manager sees both projects', mine(await manager.c.from('projects').select('id')).length === 2);
+  check('member (members_see_all on) sees both projects', mine(await member.c.from('projects').select('id')).length === 2);
+  check('member can create a task', !(await member.c.from('project_tasks').insert({ subject: 'member task', project_id: PA.id })).error);
+  check('member cannot delete a task they did not create', (await member.c.from('project_tasks').delete().eq('id', tA2.id).select()).data?.length === 0);
+
+  // ── client ──────────────────────────────────────────────────────────────────
+  check('client sees only their project', JSON.stringify(mine(await client.c.from('projects').select('id'))) === JSON.stringify([PA.id]));
+  const ct = await client.c.from('project_tasks').select('id').in('id', [tA1.id, tA2.id, tB1.id]);
+  check('client sees tasks of their project only', ids(ct).sort().join() === [tA1.id, tA2.id].sort().join());
+  check('client cannot create tasks', !!(await client.c.from('project_tasks').insert({ subject: 'x', project_id: PA.id })).error);
+  check('client cannot edit tasks', (await client.c.from('project_tasks').update({ status: 'Completed' }).eq('id', tA2.id).select()).data?.length === 0);
+  check('client cannot read timesheets', (await client.c.from('timesheets').select('id')).data?.length === 0);
+  check('client cannot read billing rates (activity types)', (await client.c.from('activity_types').select('id')).data?.length === 0);
+  check('client cannot read settings', (await client.c.from('pm_settings').select('id')).data?.length === 0);
+  const cu = await client.c.from('project_updates').select('id').eq('project_id', PA.id);
+  check('client sees shared updates only', ids(cu).includes(uShared.id) && !ids(cu).includes(uInternal.id));
+  check('client cannot post updates', !!(await client.c.from('project_updates').insert({ project_id: PA.id, description: 'x' })).error);
+  check('client cannot read the audit log', (await client.c.from('audit_log').select('id').limit(1)).data?.length === 0);
+  const cprof = await client.c.from('profiles').select('id');
+  check('client sees only themselves and people on their project', ids(cprof).every((i) => [client.id, contractor.id].includes(i)) && ids(cprof).includes(client.id), `${ids(cprof).length} profiles`);
+  check('client can comment (shared)', !(await client.c.from('comments').insert({ project_id: PA.id, record_type: 'task', record_id: tA2.id, body: 'hello', visibility: 'shared' })).error);
+  check('client cannot post an internal comment', !!(await client.c.from('comments').insert({ project_id: PA.id, record_type: 'task', record_id: tA2.id, body: 'secret', visibility: 'internal' })).error);
+  check('client cannot comment on a project they are not in', !!(await client.c.from('comments').insert({ project_id: PB.id, record_type: 'task', record_id: tB1.id, body: 'x', visibility: 'shared' })).error);
+
+  // ── contractor ──────────────────────────────────────────────────────────────
+  check('contractor sees their project only', JSON.stringify(mine(await contractor.c.from('projects').select('id'))) === JSON.stringify([PA.id]));
+  check('contractor updates status of their own task', (await contractor.c.from('project_tasks').update({ status: 'Working' }).eq('id', tA1.id).select()).data?.length === 1);
+  check('contractor cannot change other fields', !!(await contractor.c.from('project_tasks').update({ subject: 'renamed' }).eq('id', tA1.id)).error);
+  check("contractor cannot touch someone else's task", (await contractor.c.from('project_tasks').update({ status: 'Working' }).eq('id', tA2.id).select()).data?.length === 0);
+  check('contractor cannot create tasks', !!(await contractor.c.from('project_tasks').insert({ subject: 'x', project_id: PA.id })).error);
+  check('contractor cannot read timesheets', (await contractor.c.from('timesheets').select('id')).data?.length === 0);
+
+  // ── outsider (client without membership) ────────────────────────────────────
+  check('outsider sees no projects', mine(await outsider.c.from('projects').select('id')).length === 0);
+  check('outsider sees none of the tasks', (await outsider.c.from('project_tasks').select('id').in('id', [tA1.id, tA2.id, tB1.id])).data?.length === 0);
+
+  // ── members_see_all switch ──────────────────────────────────────────────────
+  const { data: s0 } = await admin.from('pm_settings').select('members_see_all').single();
+  try {
+    await admin.from('pm_settings').update({ members_see_all: false }).eq('id', true);
+    check('members_see_all off: member without membership sees nothing', mine(await member.c.from('projects').select('id')).length === 0);
+    await admin.from('project_users').insert({ project_id: PA.id, user_email: member.email, project_role: 'staff' });
+    check('...and sees the project once added as a member', JSON.stringify(mine(await member.c.from('projects').select('id'))) === JSON.stringify([PA.id]));
+  } finally { await admin.from('pm_settings').update({ members_see_all: s0.members_see_all }).eq('id', true); }
+
+  // ── files: validation + storage access ──────────────────────────────────────
+  const att = (over) => ({ project_id: PA.id, record_type: 'task', record_id: tA2.id, name: 'plan.pdf', size_bytes: 1000, storage_path: `${PA.id}/${crypto.randomUUID()}-plan.pdf`, ...over });
+  check('attachment with a disallowed type is rejected', !!(await manager.c.from('attachments').insert(att({ name: 'virus.exe', storage_path: `${PA.id}/${crypto.randomUUID()}-virus.exe`, uploaded_by: manager.id }))).error);
+  check('attachment over the size limit is rejected', !!(await manager.c.from('attachments').insert(att({ size_bytes: 999 * 1024 * 1024, uploaded_by: manager.id }))).error);
+
+  const upload = async (who, path, body = 'hello world') => who.c.storage.from('project-files').upload(path, new Blob([body], { type: 'application/pdf' }));
+  const pSh = `${PA.id}/${crypto.randomUUID()}-shared.pdf`, pIn = `${PA.id}/${crypto.randomUUID()}-internal.pdf`;
+  check('contractor can upload to their project folder', !(await upload(contractor, pSh)).error);
+  check('manager can upload an internal file', !(await upload(manager, pIn)).error);
+  check("outsider cannot upload to another project's folder", !!(await upload(outsider, `${PA.id}/${crypto.randomUUID()}-x.pdf`)).error);
+  check('client cannot upload', !!(await upload(client, `${PA.id}/${crypto.randomUUID()}-c.pdf`)).error);
+  await contractor.c.from('attachments').insert(att({ name: 'shared.pdf', storage_path: pSh, visibility: 'shared', uploaded_by: contractor.id }));
+  await manager.c.from('attachments').insert(att({ name: 'internal.pdf', storage_path: pIn, visibility: 'internal', uploaded_by: manager.id }));
+  check('client can download the shared file', !(await client.c.storage.from('project-files').download(pSh)).error);
+  check('client cannot download the internal file', !!(await client.c.storage.from('project-files').download(pIn)).error);
+  check('outsider cannot download the shared file', !!(await outsider.c.storage.from('project-files').download(pSh)).error);
+  const catt = await client.c.from('attachments').select('storage_path').eq('project_id', PA.id);
+  check('client lists only shared attachments', (catt.data || []).length === 1 && catt.data[0].storage_path === pSh);
+  await admin.storage.from('project-files').remove([pSh, pIn]);
+
+
+  // ── invite-user edge function ───────────────────────────────────────────────
+  const invite = async (who, body) => {
+    const { data: { session } } = await who.c.auth.getSession();
+    const r = await fetch(`${URL_}/functions/v1/invite-user`, { method: 'POST', headers: { apikey: ANON, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    return { status: r.status, body: await r.json().catch(() => ({})) };
+  };
+  const inv = `t-invited-${stamp}@selora-test.invalid`;
+  const r1 = await invite(manager, { email: inv, full_name: 'Invited Client', role: 'client', projects: [{ project_id: PA.id, project_role: 'client' }] });
+  check('manager invites a client onto a project (temp password returned)', r1.status === 200 && !!r1.body.temp_password && r1.body.role === 'client', JSON.stringify(r1.body).slice(0, 80));
+  if (r1.body.user_id) created.users.push(r1.body.user_id);
+  const invitee = mk();
+  const login = await invitee.auth.signInWithPassword({ email: inv, password: r1.body.temp_password });
+  check('the invited user can sign in with the temporary password', !login.error);
+  const { data: iprof } = await invitee.from('profiles').select('role, must_change_password').eq('id', r1.body.user_id).single();
+  check('profile is a client flagged to change the password', iprof?.role === 'client' && iprof.must_change_password === true);
+  check('...and is a member of the project', (await invitee.from('projects').select('id').eq('id', PA.id)).data?.length === 1);
+  check('...but sees no other project', (await invitee.from('projects').select('id').eq('id', PB.id)).data?.length === 0);
+  check('clear_must_change_password() works for the user', !(await invitee.rpc('clear_must_change_password')).error && (await invitee.from('profiles').select('must_change_password').eq('id', r1.body.user_id).single()).data?.must_change_password === false);
+  check('inviting an existing email is rejected (409)', (await invite(manager, { email: inv, role: 'member' })).status === 409);
+  check('a member cannot invite (403)', (await invite(member, { email: `x-${stamp}@selora-test.invalid`, role: 'member' })).status === 403);
+  check('a client cannot invite (403)', (await invite(client, { email: `y-${stamp}@selora-test.invalid`, role: 'member' })).status === 403);
+  check('a manager cannot create an admin (403)', (await invite(manager, { email: `z-${stamp}@selora-test.invalid`, role: 'admin' })).status === 403);
+  check('a client without a project is rejected (400)', (await invite(manager, { email: `w-${stamp}@selora-test.invalid`, role: 'client' })).status === 400);
+  check('an invalid email is rejected (400)', (await invite(manager, { email: 'not-an-email', role: 'member' })).status === 400);
+  const r2 = await invite(manager, { email: `t-member2-${stamp}@selora-test.invalid`, role: 'member' });
+  check('manager can invite an internal member without projects', r2.status === 200);
+  if (r2.body.user_id) created.users.push(r2.body.user_id);
+  const unauth = await fetch(`${URL_}/functions/v1/invite-user`, { method: 'POST', headers: { apikey: ANON, 'Content-Type': 'application/json' }, body: '{}' });
+  check('calling without a session is rejected (401)', unauth.status === 401);
+
+  // ── audit ───────────────────────────────────────────────────────────────────
+  const { data: aud } = await manager.c.from('audit_log').select('actor, action, changes, table_name').eq('record_id', tA1.id).eq('action', 'update').order('at', { ascending: false }).limit(1);
+  check('audit log recorded the contractor status change with the actor', aud?.[0]?.actor === contractor.id && aud[0].changes?.status?.new === 'Working', JSON.stringify(aud?.[0]?.changes));
+  const { data: audAll } = await member.c.from('audit_log').select('id').eq('project_id', PA.id).limit(1);
+  check('internal member can read the activity of their project', (audAll || []).length === 1);
+} catch (e) {
+  failures++; console.error('FATAL', e);
+} finally {
+  for (const id of created.projects) await admin.from('projects').delete().eq('id', id);
+  await admin.from('project_tasks').delete().like('subject', 'member task');
+  for (const id of created.users) await admin.auth.admin.deleteUser(id);
+  const { count } = await admin.from('profiles').select('id', { count: 'exact', head: true }).like('email', '%selora-test.invalid');
+  check('throwaway users removed', count === 0, `${count} left`);
+}
+console.log(failures ? `\n${failures} check(s) FAILED` : '\nAll checks passed');
+process.exit(failures ? 1 : 0);

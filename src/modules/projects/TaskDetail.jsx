@@ -3,6 +3,8 @@ import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useProjects } from '../../context/ProjectsContext';
 import { useSetup } from '../../context/SetupContext';
 import DeleteButton from '../../components/shared/DeleteButton';
+import { FilesPanel, CommentsPanel, ActivityPanel } from '../../components/shared/RecordPanels';
+import { useAuth } from '../../context/AuthContext';
 import { 
   Home, ChevronRight, ChevronDown, ChevronUp, Trash2, Plus, 
   Bold, Italic, Underline, Strikethrough, Link as LinkIcon, Image, 
@@ -15,7 +17,7 @@ export default function TaskDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const { loaded, projects, projectTasks, addProjectTask, updateProjectTask, deleteProjectTask } = useProjects();
-  const { companies } = useSetup();
+  const { companies, profiles } = useSetup();
 
   const isNew = id === 'new';
   const initialValuesFromState = location.state?.initialValues || {};
@@ -41,6 +43,7 @@ export default function TaskDetail() {
     expectedEndDate: '',
     actualStartDate: '',
     actualEndDate: '',
+    assigneeId: '',
   });
 
   const [activeTab, setActiveTab] = useState('Details');
@@ -119,7 +122,10 @@ export default function TaskDetail() {
     handleInputChange('dependencies', newDeps);
   };
 
-  const tabs = ['Details', 'Description', 'More Info'];
+  const { isInternal } = useAuth();
+  const taskProjectId = (projects || []).find(p => p.projectName === formData.project)?.dbId;
+  const tabs = isNew ? ['Details', 'Description', 'More Info'] : ['Details', 'Description', 'More Info', 'Files', 'Discussion', ...(isInternal ? ['Activity'] : [])];
+  const needsProject = (<div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Assign this task to a project (Details tab) to use files and discussion.</div>);
 
   // Input styles helper
   const inputStyle = {
@@ -344,6 +350,20 @@ export default function TaskDetail() {
 
                 <div>
                   <label style={{ fontSize: '13px', color: 'var(--text-muted, #6b7280)', display: 'block', marginBottom: '6px' }}>
+                    Assignee
+                  </label>
+                  <select
+                    value={formData.assigneeId || ''}
+                    onChange={e => handleInputChange('assigneeId', e.target.value)}
+                    style={inputStyle}
+                  >
+                    <option value="">Unassigned</option>
+                    {profiles.map(u => <option key={u.id} value={u.id}>{u.full_name || u.email} ({u.role})</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '13px', color: 'var(--text-muted, #6b7280)', display: 'block', marginBottom: '6px' }}>
                     Color
                   </label>
                   <input
@@ -552,6 +572,10 @@ export default function TaskDetail() {
         )}
 
         {/* ─── MORE INFO TAB ─── */}
+        {!isNew && formData.dbId && activeTab === 'Files' && (taskProjectId ? <FilesPanel projectId={taskProjectId} recordType="task" recordId={formData.dbId} /> : needsProject)}
+        {!isNew && formData.dbId && activeTab === 'Discussion' && (taskProjectId ? <CommentsPanel projectId={taskProjectId} recordType="task" recordId={formData.dbId} /> : needsProject)}
+        {!isNew && formData.dbId && activeTab === 'Activity' && <ActivityPanel recordId={formData.dbId} />}
+
         {activeTab === 'More Info' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '32px' }}>
             {/* Left Column */}

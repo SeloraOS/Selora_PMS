@@ -29,6 +29,7 @@ export default function ProjectUpdate() {
         { key: 'description', label: 'Update' },
         { key: 'update_date', label: 'Date', render: (r) => fmt(r.update_date) },
         { key: 'sent_to', label: 'Sent To' },
+        { key: 'visibility', label: 'Visible to', render: (r) => (r.visibility === 'shared' ? 'Clients & contractors' : 'Internal only') },
       ]}
       fields={[
         { name: 'project_id', label: 'Project', type: 'select', required: true, options: projects.map((p) => ({ value: p.dbId || p.id, label: p.projectName })) },
@@ -36,8 +37,9 @@ export default function ProjectUpdate() {
         { name: 'description', label: 'Update', type: 'textarea', required: true },
         { name: 'update_date', label: 'Date', type: 'date', default: new Date().toISOString().slice(0, 10) },
         { name: 'sent_to', label: 'Sent To' },
+        { name: 'visibility', label: 'Visible to', type: 'select', default: 'internal', options: [{ value: 'internal', label: 'Internal only' }, { value: 'shared', label: 'Clients & contractors on this project' }] },
       ]}
-      fromForm={(v) => ({ project_id: v.project_id, type: v.type, description: v.description, update_date: v.update_date || null, sent_to: v.sent_to || null })}
+      fromForm={(v) => ({ project_id: v.project_id, type: v.type, description: v.description, update_date: v.update_date || null, sent_to: v.sent_to || null, visibility: v.visibility || 'internal' })}
       onSave={(values, row) => save('project_updates', values, row?.id)}
       onDelete={(row) => remove('project_updates', row.id)}
     />

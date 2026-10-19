@@ -53,7 +53,7 @@ function RowListField({ value, onChange, disabled, columns }) {
 
 export default function SetupListPage({
   title, addLabel, rows, columns, searchText, filters = [], fields,
-  canEdit, canCreate = canEdit, canDelete = () => canEdit, onSave, onDelete, toForm, fromForm, loading,
+  canEdit, canCreate = canEdit, canDelete = () => canEdit, onSave, onDelete, toForm, fromForm, loading, extraActions,
 }) {
   const [search, setSearch] = useState('');
   const [filterValues, setFilterValues] = useState({});
@@ -103,6 +103,7 @@ export default function SetupListPage({
               <Filter size={14} /> Filter
             </button>
           )}
+          {extraActions}
           {canCreate && (
             <button onClick={openNew} style={{ backgroundColor: 'var(--gray-900, #111827)', border: '1px solid var(--gray-900, #111827)', color: '#ffffff', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <Plus size={14} /> {addLabel || `Add ${title}`}
