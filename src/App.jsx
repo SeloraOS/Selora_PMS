@@ -28,6 +28,12 @@ import ProjectWiseCost from './modules/projects/reports/ProjectWiseCost';
 import Users from './modules/projects/Users';
 import Calendar from './modules/projects/Calendar';
 import { SetupProvider } from './context/SetupContext';
+import { SiteProvider } from './context/SiteContext';
+import Approvals from './modules/projects/site/Approvals';
+import Snags from './modules/projects/site/Snags';
+import Gantt from './modules/projects/site/Gantt';
+import { DailyReportList, DailyReportForm } from './modules/projects/site/DailyReports';
+import { Trades, SnagCategories } from './modules/projects/site/Lookups';
 import DelayedTasksSummary from './modules/projects/reports/DelayedTasksSummary';
 import ProjectsSearch from './modules/projects/ProjectsSearch';
 import ProjectsSettings from './modules/projects/ProjectsSettings';
@@ -66,6 +72,12 @@ function InternalOnly({ children }) {
   return isExternal ? <Navigate to="/projects" replace /> : children;
 }
 
+/** Clients cannot file daily reports. */
+function NoClient({ children }) {
+  const { role } = useAuth();
+  return role === 'client' ? <Navigate to="/projects" replace /> : children;
+}
+
 /** One URL, two screens: the internal page for staff/members, the portal page for clients/contractors. */
 function ByRole({ internal, external }) {
   const { isExternal } = useAuth();
@@ -86,7 +98,9 @@ export default function App() {
               <RequireAuth>
                 <SetupProvider>
                   <ProjectsProvider>
-                    <AppShell />
+                    <SiteProvider>
+                      <AppShell />
+                    </SiteProvider>
                   </ProjectsProvider>
                 </SetupProvider>
               </RequireAuth>
@@ -113,6 +127,13 @@ export default function App() {
             <Route path="projects/reports/project-wise-cost" element={<InternalOnly><ProjectWiseCost /></InternalOnly>} />
             <Route path="projects/reports/project-wise-stock-tracking" element={<Navigate to="/projects/reports/project-wise-cost" replace />} />
             <Route path="projects/users" element={<InternalOnly><Users /></InternalOnly>} />
+            <Route path="projects/daily-report" element={<NoClient><DailyReportList /></NoClient>} />
+            <Route path="projects/daily-report/:id" element={<NoClient><DailyReportForm /></NoClient>} />
+            <Route path="projects/snags" element={<Snags />} />
+            <Route path="projects/approvals" element={<InternalOnly><Approvals /></InternalOnly>} />
+            <Route path="projects/gantt" element={<InternalOnly><Gantt /></InternalOnly>} />
+            <Route path="projects/setup/trades" element={<InternalOnly><Trades /></InternalOnly>} />
+            <Route path="projects/setup/snag-categories" element={<InternalOnly><SnagCategories /></InternalOnly>} />
             <Route path="projects/calendar" element={<Calendar />} />
             <Route path="projects/reports/delayed-tasks-summary" element={<InternalOnly><DelayedTasksSummary /></InternalOnly>} />
             <Route path="projects/settings" element={<InternalOnly><ProjectsSettings /></InternalOnly>} />

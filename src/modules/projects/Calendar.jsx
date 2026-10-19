@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { useSite } from '../../context/SiteContext';
 import { ChevronLeft, ChevronRight, Clock, Flag, MessageSquare, Plus, X, CalendarDays, AlertTriangle } from 'lucide-react';
 import { useProjects } from '../../context/ProjectsContext';
 import { useSetup } from '../../context/SetupContext';
@@ -11,7 +12,7 @@ import {
 } from '../../lib/calendar';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const TYPE_DOT = { task: '#3b82f6', project: '#8b5cf6', timesheet: '#14b8a6', holiday: '#ec4899', update: '#f59e0b' };
+const TYPE_DOT = { task: '#3b82f6', project: '#8b5cf6', timesheet: '#14b8a6', holiday: '#ec4899', update: '#f59e0b', approval: '#ef4444', snag: '#f97316' };
 
 const readView = () => { try { const v = localStorage.getItem('selora-calendar-view'); return v === 'week' || v === 'agenda' ? v : 'month'; } catch { return 'month'; } };
 
@@ -141,6 +142,7 @@ export default function Calendar() {
   const navigate = useNavigate();
   const { projects, projectTasks, timesheets, updateProjectTask } = useProjects();
   const { holidayLists, updates, settings } = useSetup();
+  const { approvals, snags } = useSite();
   const today = todayStr();
 
   const [view, setViewState] = useState(readView);
@@ -158,8 +160,8 @@ export default function Calendar() {
 
   const range = useMemo(() => rangeFor(view, cursor), [view, cursor]);
   const events = useMemo(
-    () => buildEvents({ tasks, projects, entries, holidays, updates }, { ...range, today, types, project }),
-    [tasks, projects, entries, holidays, updates, range, today, types, project]
+    () => buildEvents({ tasks, projects, entries, holidays, updates, approvals, snags }, { ...range, today, types, project }),
+    [tasks, projects, entries, holidays, updates, approvals, snags, range, today, types, project]
   );
   const byDay = useMemo(() => groupByDay(events), [events]);
 

@@ -94,5 +94,19 @@ begin
      and qual not like '%is_internal%' and qual not like '%current_role_is%';
   if msg is not null then raise exception 'cost tables readable by external roles: %', msg; end if;
 
+  -- phase 2: site tables are secured, audited and realtime
+  select string_agg(t, ', ') into msg from unnest(array['trades','snag_categories','daily_reports','daily_report_work','daily_report_manpower','snags','approvals']) t
+   where not exists (select 1 from pg_publication_tables p where p.pubname = 'supabase_realtime' and p.schemaname = 'public' and p.tablename = t);
+  if msg is not null then raise exception 'site tables missing from realtime: %', msg; end if;
+  select string_agg(t, ', ') into msg from unnest(array['daily_reports','snags','approvals']) t
+   where not exists (select 1 from pg_trigger g where g.tgrelid = ('public.' || t)::regclass and g.tgname = 'trg_' || t || '_audit');
+  if msg is not null then raise exception 'missing audit triggers on: %', msg; end if;
+  select count(*) into n from public.approvals where approved_on is not null and applied_on is not null and approved_on < applied_on;
+  if n > 0 then raise exception 'approvals approved before applied'; end if;
+  select count(*) into n from public.daily_report_work w join public.daily_reports r on r.id = w.report_id join public.project_tasks t on t.id = w.task_id where t.project_id <> r.project_id;
+  if n > 0 then raise exception 'daily report work lines on tasks of another project'; end if;
+  select count(*) into n from public.pm_settings where approval_warning_days < 1 or snag_default_due_days < 1;
+  if n > 0 then raise exception 'invalid site settings'; end if;
+
   raise notice 'verify.sql: all checks passed';
 end $$;

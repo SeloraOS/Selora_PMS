@@ -83,6 +83,55 @@ try {
   check('contractor cannot create tasks', !!(await contractor.c.from('project_tasks').insert({ subject: 'x', project_id: PA.id })).error);
   check('contractor cannot read timesheets', (await contractor.c.from('timesheets').select('id')).data?.length === 0);
 
+  // ── phase 2: daily reports, snags, approvals ────────────────────────────────
+  const today = new Date().toISOString().slice(0, 10);
+  const dpr = await contractor.c.from('daily_reports').insert({ project_id: PA.id, report_date: today, summary: 'pour done', created_by: contractor.id }).select('id, code, status').single();
+  check('contractor can start a daily report on their project', !dpr.error && /^DPR-/.test(dpr.data?.code || ''), dpr.error?.message);
+  check('contractor cannot report on a project they are not in', !!(await contractor.c.from('daily_reports').insert({ project_id: PB.id, report_date: today, created_by: contractor.id })).error);
+  check('client cannot create a daily report', !!(await client.c.from('daily_reports').insert({ project_id: PA.id, report_date: today, created_by: client.id })).error);
+  check('draft report is hidden from the client', (await client.c.from('daily_reports').select('id').eq('id', dpr.data.id)).data?.length === 0);
+  check('work line must reference a task of the same project', !!(await contractor.c.from('daily_report_work').insert({ report_id: dpr.data.id, task_id: tB1.id, progress_pct: 10 })).error);
+  check('contractor adds a work line and manpower', !(await contractor.c.from('daily_report_work').insert({ report_id: dpr.data.id, task_id: tA1.id, progress_pct: 100 })).error && !(await contractor.c.from('daily_report_manpower').insert({ report_id: dpr.data.id, trade: 'Mason', head_count: 5 })).error);
+  check('manpower with an unknown trade is rejected', !!(await contractor.c.from('daily_report_manpower').insert({ report_id: dpr.data.id, trade: 'Wizard', head_count: 1 })).error);
+  check('contractor submits the report', !(await contractor.c.from('daily_reports').update({ status: 'submitted' }).eq('id', dpr.data.id)).error);
+  const { data: tProg } = await admin.from('project_tasks').select('status, percent_complete, actual_end_date').eq('id', tA1.id).single();
+  check('submitting 100% completes the task and stamps the actual end', tProg.status === 'Completed' && Number(tProg.percent_complete) === 100 && !!tProg.actual_end_date, JSON.stringify(tProg));
+  check('submitted report cannot be edited by the contractor', (await contractor.c.from('daily_reports').update({ summary: 'tamper' }).eq('id', dpr.data.id).select()).data?.length === 0);
+  check('internal report stays hidden from the client after submit', (await client.c.from('daily_reports').select('id').eq('id', dpr.data.id)).data?.length === 0);
+  await manager.c.from('daily_reports').update({ visibility: 'shared' }).eq('id', dpr.data.id);
+  check('shared + submitted report is visible to the client', (await client.c.from('daily_reports').select('id').eq('id', dpr.data.id)).data?.length === 1);
+  check('outsider cannot see the report', (await outsider.c.from('daily_reports').select('id').eq('id', dpr.data.id)).data?.length === 0);
+
+  const sn = await client.c.from('snags').insert({ project_id: PA.id, title: 'Hairline crack in lobby', severity: 'High', reported_by: client.id, visibility: 'internal', status: 'Verified' }).select('id, code, visibility, status, due_date').single();
+  check('client can report a snag (forced shared + open, due date defaulted)', !sn.error && sn.data.visibility === 'shared' && sn.data.status === 'Open' && !!sn.data.due_date && /^SNAG-/.test(sn.data.code), sn.error?.message);
+  check('client cannot report a snag on another project', !!(await client.c.from('snags').insert({ project_id: PB.id, title: 'x', reported_by: client.id })).error);
+  check('client cannot edit a snag afterwards', (await client.c.from('snags').update({ title: 'changed' }).eq('id', sn.data.id).select()).data?.length === 0);
+  await manager.c.from('snags').update({ assignee_id: contractor.id }).eq('id', sn.data.id);
+  check('contractor sees the snag assigned to them', (await contractor.c.from('snags').select('id').eq('id', sn.data.id)).data?.length === 1);
+  check('contractor marks the snag Fixed', (await contractor.c.from('snags').update({ status: 'Fixed' }).eq('id', sn.data.id).select()).data?.length === 1);
+  check('contractor cannot verify a snag', !!(await contractor.c.from('snags').update({ status: 'Verified' }).eq('id', sn.data.id)).error);
+  check('contractor cannot edit other snag fields', !!(await contractor.c.from('snags').update({ severity: 'Low' }).eq('id', sn.data.id)).error);
+  const ver = await manager.c.from('snags').update({ status: 'Verified' }).eq('id', sn.data.id).select('closed_at').single();
+  check('manager verifies the snag and closed_at is stamped', !!ver.data?.closed_at);
+  check('outsider cannot see the snag', (await outsider.c.from('snags').select('id').eq('id', sn.data.id)).data?.length === 0);
+  await manager.c.from('snags').insert({ project_id: PA.id, title: 'internal snag', reported_by: manager.id, visibility: 'internal' });
+  check('client sees shared snags only', (await client.c.from('snags').select('id').eq('project_id', PA.id)).data?.length === 1);
+
+  const ap = await manager.c.rpc('add_standard_approvals', { p_project: PA.id });
+  check('standard approvals are added once', ap.data === 7 && (await manager.c.rpc('add_standard_approvals', { p_project: PA.id })).data === 0, JSON.stringify(ap));
+  check('client cannot read approvals', (await client.c.from('approvals').select('id').eq('project_id', PA.id)).data?.length === 0);
+  check('client cannot add standard approvals', !!(await client.c.rpc('add_standard_approvals', { p_project: PA.id })).error);
+  check('approval dates are validated (expiry before approval)', !!(await manager.c.from('approvals').insert({ project_id: PA.id, name: 'Bad dates', approved_on: '2026-02-01', expiry_on: '2026-01-01' })).error);
+  check('member can read approvals', (await member.c.from('approvals').select('id').eq('project_id', PA.id)).data?.length === 7);
+
+  const bl = await manager.c.rpc('set_project_baseline', { p_project: PA.id });
+  check('manager sets the baseline', !bl.error, bl.error?.message);
+  check('member cannot set the baseline', !!(await member.c.rpc('set_project_baseline', { p_project: PA.id })).error);
+  check('contractor can report progress on their task', (await contractor.c.from('project_tasks').update({ percent_complete: 50 }).eq('id', tA1.id).select()).data?.length === 1);
+  check('contractor cannot move task dates', !!(await contractor.c.from('project_tasks').update({ expected_end_date: '2030-01-01' }).eq('id', tA1.id)).error);
+  check('trades are readable but not writable by a client', (await client.c.from('trades').select('id')).data?.length > 0 && !!(await client.c.from('trades').insert({ name: 'Zz Trade' })).error);
+
+
   // ── outsider (client without membership) ────────────────────────────────────
   check('outsider sees no projects', mine(await outsider.c.from('projects').select('id')).length === 0);
   check('outsider sees none of the tasks', (await outsider.c.from('project_tasks').select('id').in('id', [tA1.id, tA2.id, tB1.id])).data?.length === 0);
@@ -148,8 +197,9 @@ try {
   check('calling without a session is rejected (401)', unauth.status === 401);
 
   // ── audit ───────────────────────────────────────────────────────────────────
-  const { data: aud } = await manager.c.from('audit_log').select('actor, action, changes, table_name').eq('record_id', tA1.id).eq('action', 'update').order('at', { ascending: false }).limit(1);
-  check('audit log recorded the contractor status change with the actor', aud?.[0]?.actor === contractor.id && aud[0].changes?.status?.new === 'Working', JSON.stringify(aud?.[0]?.changes));
+  const { data: aud } = await manager.c.from('audit_log').select('actor, action, changes, table_name').eq('record_id', tA1.id).eq('action', 'update').order('at', { ascending: false });
+  const audStatus = (aud || []).find((a) => a.changes?.status?.new === 'Working');
+  check('audit log recorded the contractor status change with the actor', audStatus?.actor === contractor.id, JSON.stringify(aud?.[0]?.changes));
   const { data: audAll } = await member.c.from('audit_log').select('id').eq('project_id', PA.id).limit(1);
   check('internal member can read the activity of their project', (audAll || []).length === 1);
 } catch (e) {

@@ -61,9 +61,9 @@ function SidebarGroup({ label, items, isCollapsed }) {
 
 export default function Sidebar({ isCollapsed, setIsCollapsed, onOpenNotifications }) {
   const config = PROJECTS_SIDEBAR_CONFIG;
-  const { profile, isExternal } = useAuth();
-  const visible = (items) => items.filter((i) => !(i.internalOnly && isExternal));
-  const { count: overdueCount } = useAlerts();
+  const { profile, isExternal, role } = useAuth();
+  const visible = (items) => items.filter((i) => !(i.internalOnly && isExternal) && !(i.noClient && role === 'client'));
+  const { total: overdueCount } = useAlerts();
 
   return (
     <aside

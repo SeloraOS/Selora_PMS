@@ -53,7 +53,7 @@ function RowListField({ value, onChange, disabled, columns }) {
 
 export default function SetupListPage({
   title, addLabel, rows, columns, searchText, filters = [], fields,
-  canEdit, canCreate = canEdit, canDelete = () => canEdit, onSave, onDelete, toForm, fromForm, loading, extraActions,
+  canEdit, canCreate = canEdit, canDelete = () => canEdit, onSave, onDelete, toForm, fromForm, loading, extraActions, fieldDisabled, renderRow,
 }) {
   const [search, setSearch] = useState('');
   const [filterValues, setFilterValues] = useState({});
@@ -171,19 +171,20 @@ export default function SetupListPage({
                 <div key={f.name}>
                   <label style={labelStyle}>{f.label}{f.required ? ' *' : ''}</label>
                   {f.type === 'select' ? (
-                    <select style={inputStyle} value={editing.values[f.name] ?? ''} disabled={readOnly} onChange={(e) => setValue(f.name, e.target.value)}>
+                    <select style={inputStyle} value={editing.values[f.name] ?? ''} disabled={readOnly || !!fieldDisabled?.(f, editing.row)} onChange={(e) => setValue(f.name, e.target.value)}>
                       <option value="">{f.placeholder || 'Select…'}</option>
                       {f.options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                   ) : f.type === 'textarea' ? (
-                    <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={editing.values[f.name] ?? ''} disabled={readOnly} onChange={(e) => setValue(f.name, e.target.value)} />
+                    <textarea style={{ ...inputStyle, minHeight: '80px', resize: 'vertical' }} value={editing.values[f.name] ?? ''} disabled={readOnly || !!fieldDisabled?.(f, editing.row)} onChange={(e) => setValue(f.name, e.target.value)} />
                   ) : f.type === 'rowlist' ? (
                     <RowListField columns={f.columns} value={editing.values[f.name]} disabled={readOnly} onChange={(v) => setValue(f.name, v)} />
                   ) : (
-                    <input style={inputStyle} type={f.type || 'text'} min={f.type === 'number' ? 0 : undefined} value={editing.values[f.name] ?? ''} disabled={readOnly} onChange={(e) => setValue(f.name, e.target.value)} />
+                    <input style={inputStyle} type={f.type || 'text'} min={f.type === 'number' ? 0 : undefined} value={editing.values[f.name] ?? ''} disabled={readOnly || !!fieldDisabled?.(f, editing.row)} onChange={(e) => setValue(f.name, e.target.value)} />
                   )}
                 </div>
               ))}
+              {editing.row && renderRow && renderRow(editing.row)}
               {error && <div style={{ fontSize: '12px', color: '#ef4444' }}>{error}</div>}
             </div>
             <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color, #e5e7eb)', display: 'flex', alignItems: 'center', gap: '12px' }}>

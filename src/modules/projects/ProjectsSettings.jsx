@@ -51,7 +51,8 @@ export default function ProjectsSettings() {
   const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setStatus(''); };
   const save = async () => {
     const { company, currency, holiday_list, default_billing_rate, default_costing_rate, limit_timesheet, auto_close_tasks, task_alerts,
-      members_see_all, default_project_role, client_can_comment, max_upload_mb, allowed_file_types, audit_retention_days, invite_only } = form;
+      members_see_all, default_project_role, client_can_comment, max_upload_mb, allowed_file_types, audit_retention_days, invite_only,
+      dpr_required, dpr_cutoff_time, approval_warning_days, snag_default_due_days, working_days } = form;
     const ok = await saveSettings({
       company, currency, holiday_list: holiday_list || null,
       default_billing_rate: Number(default_billing_rate) || 0,
@@ -61,6 +62,10 @@ export default function ProjectsSettings() {
       max_upload_mb: Math.min(200, Math.max(1, Number(max_upload_mb) || 25)),
       allowed_file_types: String(allowed_file_types || '').toLowerCase().replace(/[^a-z0-9,]/g, ''),
       audit_retention_days: Math.min(3650, Math.max(30, Number(audit_retention_days) || 365)),
+      dpr_required, dpr_cutoff_time: String(dpr_cutoff_time || '18:00').slice(0, 5),
+      approval_warning_days: Math.min(365, Math.max(1, Number(approval_warning_days) || 30)),
+      snag_default_due_days: Math.min(90, Math.max(1, Number(snag_default_due_days) || 7)),
+      working_days: String(working_days || '').split(',').filter(Boolean).join(',') || 'Mon,Tue,Wed,Thu,Fri,Sat',
     });
     setStatus(ok ? 'Settings saved.' : '');
   };
@@ -139,6 +144,38 @@ export default function ProjectsSettings() {
           </Row>
           <Row title="Invitation-only accounts" hint="Policy flag. Public sign-up must also be switched off on the server (DISABLE_SIGNUP)">
             <Toggle isOn={form.invite_only} disabled={!editable} onToggle={() => set('invite_only', !form.invite_only)} />
+          </Row>
+        </div>
+
+        <div style={card}>
+          <h2 style={cardTitle}>Site</h2>
+          <Row title="Daily reports required" hint="Open projects without a submitted report today are flagged after the cut-off time">
+            <Toggle isOn={form.dpr_required} disabled={!editable} onToggle={() => set('dpr_required', !form.dpr_required)} />
+          </Row>
+          <Row title="Daily report cut-off" hint="Time of day after which a missing report is flagged">
+            <input type="time" aria-label="Daily report cut-off" value={String(form.dpr_cutoff_time || '18:00').slice(0, 5)} disabled={!editable} onChange={(e) => set('dpr_cutoff_time', e.target.value)} style={control} />
+          </Row>
+          <Row title="Approval warning (days)" hint="Warn this many days before an approval expires (1 to 365)">
+            <input type="number" min="1" max="365" value={form.approval_warning_days} disabled={!editable} onChange={(e) => set('approval_warning_days', e.target.value)} style={{ ...control, width: '100px', textAlign: 'right' }} />
+          </Row>
+          <Row title="Snag due after (days)" hint="Default due date for new snags (1 to 90)">
+            <input type="number" min="1" max="90" value={form.snag_default_due_days} disabled={!editable} onChange={(e) => set('snag_default_due_days', e.target.value)} style={{ ...control, width: '100px', textAlign: 'right' }} />
+          </Row>
+          <Row title="Working days" hint="Days the site works">
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => {
+                const on = String(form.working_days || '').split(',').includes(d);
+                return (
+                  <label key={d} style={{ fontSize: '12px', display: 'flex', gap: '3px', alignItems: 'center', color: 'var(--text-light)' }}>
+                    <input type="checkbox" checked={on} disabled={!editable} onChange={() => {
+                      const cur = String(form.working_days || '').split(',').filter(Boolean);
+                      const next = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].filter((x) => (x === d ? !on : cur.includes(x)));
+                      set('working_days', next.join(','));
+                    }} /> {d}
+                  </label>
+                );
+              })}
+            </div>
           </Row>
         </div>
 

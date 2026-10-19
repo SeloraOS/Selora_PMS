@@ -52,6 +52,17 @@ Roles: sign-ups are always `member`. Promote the first admin yourself:
 - **Tests:** `SERVICE_ROLE_KEY=... npm run test:access` creates throwaway users in every role and checks row-level security, storage
   access, the audit log and the invite function.
 
+## Site reality (beta, Phase 2)
+
+Migrations `0022`-`0025` (additive): `trades`, `snag_categories`, `daily_reports` (+ `daily_report_work`, `daily_report_manpower`), `snags`, `approvals`, task `percent_complete` and baseline columns, and the Phase 2 `pm_settings` columns. Demo data: `supabase/seed_demo_site.sql`.
+
+- **Daily reports** (`/projects/daily-report`): mobile-first form, one report per project and day; submitting pushes each work line's progress to its task (100% completes it). Contractors can file reports on their projects (own drafts only); staff can share a submitted report with the client. Reports written offline wait in `localStorage` and are sent when the connection returns. A manifest and a small service worker (production build only) make the form installable and openable offline.
+- **Snags** (`/projects/snags`): severity, status Open / Fixed / Verified / Rejected, assignee, due date (default from settings), photos through the Files panel. Clients and contractors can report snags (always shared); contractors can only mark their assigned snags Fixed; staff verify.
+- **Approvals** (`/projects/approvals`): RERA, commencement, fire NOC, environmental and occupancy templates ("Add standard set"), expiry badges (valid / expiring / expired), internal only.
+- **Gantt** (`/projects/gantt`): bars from task dates, critical path (finish-to-start dependencies, `src/lib/gantt.js`), baseline overlay (staff "Set baseline"), drag to move, drag the right edge to change the end date. Dependency arrows are not drawn; critical tasks are highlighted instead.
+- **Alerts and calendar:** the notification drawer lists expiring/expired approvals, overdue snags and projects with no report after the cut-off; the calendar gains Approval expiry and Snags due events.
+- **Settings (Projects Settings > Site):** daily report required + cut-off time, approval warning days, snag default due days, working days. Trades and snag categories are managed under Setup.
+
 ## Tests and verification
 
     npm test          # unit tests: report aggregation, rates, field mappers
