@@ -18,7 +18,7 @@ function SidebarSectionLabel({ label, isOpen, onToggle, isCollapsed }) {
         padding: '10px 16px 4px',
         fontSize: '11px',
         fontWeight: 500,
-        color: '#383838',
+        color: 'var(--text-faint)',
         letterSpacing: '0.04em',
         display: 'flex',
         alignItems: 'center',

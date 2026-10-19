@@ -160,7 +160,7 @@ export default function TimesheetList() {
                     <td style={{ padding: '12px 16px', color: 'var(--text-muted, #6b7280)' }}>{ts.project || '—'}</td>
                     <td style={{ padding: '12px 16px', color: 'var(--text-color, #1a1a1a)' }}>{(ts.totalWorkingHours || 0).toFixed(3)}</td>
                     <td style={{ padding: '12px 16px' }}>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 500, backgroundColor: ts.status === 'Draft' ? '#fff7ed' : '#f0fdf4', color: ts.status === 'Draft' ? '#b45309' : '#15803d' }}>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 500, backgroundColor: ts.status === 'Draft' ? 'var(--st-amber-bg)' : 'var(--st-green-bg)', color: ts.status === 'Draft' ? 'var(--st-amber-fg)' : 'var(--st-green-fg)' }}>
                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: ts.status === 'Draft' ? '#f59e0b' : '#22c55e' }}></div>
                         {ts.status}
                       </div>

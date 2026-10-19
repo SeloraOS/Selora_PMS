@@ -25,6 +25,14 @@ Roles: sign-ups are always `member`. Promote the first admin yourself:
 
     update public.profiles set role = 'admin' where email = 'you@example.com';
 
+## Theme and calendar
+
+- **Dark mode:** Light / Dark / System toggle in the top bar (and on the login page). The choice is stored in `localStorage`
+  (`selora-theme`); `public/theme-init.js` applies it before first paint. Colors come from CSS variables in
+  `src/styles/globals.css` (`[data-theme="dark"]`); charts use `src/lib/useChartTheme.js`.
+- **Calendar** (`/projects/calendar`): month / week / agenda views of tasks, project dates, timesheet hours, holidays (the default
+  holiday list from Project Settings) and project updates. Click an empty day to create a task, drag a task to move its dates.
+
 ## Tests and verification
 
     npm test          # unit tests: report aggregation, rates, field mappers

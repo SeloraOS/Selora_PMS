@@ -120,4 +120,7 @@ begin
                      where t.project_id = e.project_id and t.status in ('Open','Working','Pending','Overdue')
                      order by t.created_at limit 1)
    where e.project_id in (select id from public.projects where created_by = u) and e.task_id is null;
+
+  -- default holiday list shown on the calendar
+  update public.pm_settings set holiday_list = 'Standard Corporate' where holiday_list is null;
 end $$;

@@ -6,6 +6,7 @@ import React, { useContext } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import { TopbarContext } from '../../context/TopbarContext';
+import ThemeToggle from '../shared/ThemeToggle';
 
 /* ─── Label map ───────────────────────────────────────────────── */
 const formatLabel = (segment) => {
@@ -28,6 +29,7 @@ const formatLabel = (segment) => {
     'timesheet-billing-summary': 'Timesheet Billing Summary',
     'project-wise-cost': 'Project wise Cost',
     users: 'Users',
+    calendar: 'Calendar',
     'delayed-tasks-summary': 'Delayed Tasks Summary',
     'getting-started': 'Getting Started',
   };
@@ -42,7 +44,7 @@ export default function Topbar() {
 
   const pathSegments = location.pathname.split('/').filter(Boolean);
 
-  const sep = <span style={{ color: '#383838', margin: '0 4px' }}>/</span>;
+  const sep = <span style={{ color: 'var(--text-faint)', margin: '0 4px' }}>/</span>;
 
   return (
     <header
@@ -102,11 +104,10 @@ export default function Topbar() {
       </nav>
 
       {/* ── Right-side slot (injected by current page) ─────────── */}
-      {rightActions && (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          {rightActions}
-        </div>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        {rightActions}
+        <ThemeToggle />
+      </div>
     </header>
   );
 }

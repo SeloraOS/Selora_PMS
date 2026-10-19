@@ -37,6 +37,10 @@ export default function TaskDetail() {
     dependencies: [],
     company: 'Selora Realty',
     department: '',
+    expectedStartDate: '',
+    expectedEndDate: '',
+    actualStartDate: '',
+    actualEndDate: '',
   });
 
   const [activeTab, setActiveTab] = useState('Details');
@@ -120,7 +124,7 @@ export default function TaskDetail() {
   // Input styles helper
   const inputStyle = {
     width: '100%',
-    backgroundColor: '#ffffff',
+    backgroundColor: 'var(--card-bg)',
     border: '1px solid var(--border-color, #e5e7eb)',
     borderRadius: '6px',
     padding: '8px 12px',
@@ -168,8 +172,8 @@ export default function TaskDetail() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {/* Status Pill Tag */}
           <span style={{ 
-            backgroundColor: isSaved ? '#f0fdf4' : '#fff7ed',
-            color: isSaved ? '#15803d' : '#b45309',
+            backgroundColor: isSaved ? 'var(--st-green-bg)' : 'var(--st-amber-bg)',
+            color: isSaved ? 'var(--st-green-fg)' : 'var(--st-amber-fg)',
             padding: '2px 8px', 
             borderRadius: '12px', 
             fontSize: '11px', 
@@ -367,7 +371,7 @@ export default function TaskDetail() {
               
               {isDependenciesOpen && (
                 <div style={{ padding: '16px', borderTop: '1px solid var(--border-color, #e5e7eb)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ffffff' }}>
+                  <div style={{ border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--card-bg)' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
                       <thead>
                         <tr style={{ backgroundColor: 'var(--surface-gray-1, #f9fafb)', borderBottom: '1px solid var(--border-color, #e5e7eb)', color: 'var(--text-muted, #6b7280)' }}>
@@ -457,6 +461,19 @@ export default function TaskDetail() {
               )}
             </div>
 
+            {/* Timeline: these dates drive the Calendar and the delayed-task alerts */}
+            <div style={{ marginTop: '24px', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '16px 20px' }}>
+              <div style={{ fontSize: '14px', fontWeight: 600, marginBottom: '14px' }}>Timeline</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                {[['expectedStartDate', 'Expected Start Date'], ['expectedEndDate', 'Expected End Date'], ['actualStartDate', 'Actual Start Date'], ['actualEndDate', 'Actual End Date']].map(([field, label]) => (
+                  <div key={field}>
+                    <label style={{ fontSize: '13px', color: 'var(--text-muted, #6b7280)', display: 'block', marginBottom: '6px' }}>{label}</label>
+                    <input type="date" value={formData[field] || ''} onChange={e => handleInputChange(field, e.target.value)} style={inputStyle} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         )}
 
@@ -466,14 +483,14 @@ export default function TaskDetail() {
             <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted, #6b7280)' }}>Description</div>
 
             {/* Mock Rich Text Editor Container */}
-            <div style={{ border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ffffff' }}>
+            <div style={{ border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--card-bg)' }}>
               
               {/* Rich Text Editor Toolbar */}
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', padding: '8px 12px', borderBottom: '1px solid var(--border-color, #e5e7eb)', backgroundColor: 'var(--surface-gray-1, #f9fafb)' }}>
-                <select style={{ backgroundColor: '#ffffff', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', color: 'var(--text-color, #1a1a1a)', outline: 'none' }}>
+                <select style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', color: 'var(--text-color, #1a1a1a)', outline: 'none' }}>
                   <option>Normal</option>
                 </select>
-                <select style={{ backgroundColor: '#ffffff', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', color: 'var(--text-color, #1a1a1a)', outline: 'none' }}>
+                <select style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', color: 'var(--text-color, #1a1a1a)', outline: 'none' }}>
                   <option>Table</option>
                 </select>
 
@@ -489,7 +506,7 @@ export default function TaskDetail() {
                 <div style={{ width: '1px', height: '18px', backgroundColor: 'var(--border-color, #e5e7eb)', margin: '0 4px' }} />
 
                 <button type="button" style={toolbarButtonStyle} title="Text Color"><span style={{ fontSize: '13px', color: '#ef4444', borderBottom: '2px solid #ef4444', lineHeight: 1 }}>A</span></button>
-                <button type="button" style={toolbarButtonStyle} title="Text Background"><span style={{ fontSize: '13px', backgroundColor: '#fef08a', color: '#1a1a1a', padding: '0 2px', borderRadius: '2px', lineHeight: 1 }}>A</span></button>
+                <button type="button" style={toolbarButtonStyle} title="Text Background"><span style={{ fontSize: '13px', backgroundColor: '#fef08a', color: 'var(--text-color)', padding: '0 2px', borderRadius: '2px', lineHeight: 1 }}>A</span></button>
                 <button type="button" style={toolbarButtonStyle} title="Blockquote"><span style={{ fontSize: '13px', fontFamily: 'serif', fontWeight: 'bold' }}>“</span></button>
                 <button type="button" style={toolbarButtonStyle} title="Code Block"><span style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 'bold' }}>&lt;/&gt;</span></button>
                 
@@ -524,7 +541,7 @@ export default function TaskDetail() {
                   padding: '12px 16px',
                   fontSize: '14px',
                   color: 'var(--text-color, #1a1a1a)',
-                  backgroundColor: '#ffffff',
+                  backgroundColor: 'var(--card-bg)',
                   fontFamily: 'var(--font-family, Inter, sans-serif)',
                   resize: 'vertical',
                   boxSizing: 'border-box'

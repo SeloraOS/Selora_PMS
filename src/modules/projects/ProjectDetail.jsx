@@ -154,7 +154,7 @@ export default function ProjectDetail() {
   // Input styles helper
   const inputStyle = {
     width: '100%',
-    backgroundColor: '#ffffff',
+    backgroundColor: 'var(--card-bg)',
     border: '1px solid var(--border-color, #e5e7eb)',
     borderRadius: '6px',
     padding: '8px 12px',
@@ -202,8 +202,8 @@ export default function ProjectDetail() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {/* Status Pill Tag */}
           <span style={{ 
-            backgroundColor: isSaved ? '#f0fdf4' : '#fff7ed',
-            color: isSaved ? '#15803d' : '#b45309',
+            backgroundColor: isSaved ? 'var(--st-green-bg)' : 'var(--st-amber-bg)',
+            color: isSaved ? 'var(--st-green-fg)' : 'var(--st-amber-fg)',
             padding: '2px 8px', 
             borderRadius: '12px', 
             fontSize: '11px', 
@@ -798,14 +798,14 @@ export default function ProjectDetail() {
                   <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-muted, #6b7280)' }}>Notes</div>
 
                   {/* Mock Rich Text Editor Container */}
-                  <div style={{ border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '8px', overflow: 'hidden', backgroundColor: '#ffffff' }}>
+                  <div style={{ border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '8px', overflow: 'hidden', backgroundColor: 'var(--card-bg)' }}>
                     
                     {/* Rich Text Editor Toolbar */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px', padding: '8px 12px', borderBottom: '1px solid var(--border-color, #e5e7eb)', backgroundColor: 'var(--surface-gray-1, #f9fafb)' }}>
-                      <select style={{ backgroundColor: '#ffffff', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', color: 'var(--text-color, #1a1a1a)', outline: 'none' }}>
+                      <select style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', color: 'var(--text-color, #1a1a1a)', outline: 'none' }}>
                         <option>Normal</option>
                       </select>
-                      <select style={{ backgroundColor: '#ffffff', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', color: 'var(--text-color, #1a1a1a)', outline: 'none' }}>
+                      <select style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color, #e5e7eb)', borderRadius: '4px', padding: '2px 8px', fontSize: '12px', color: 'var(--text-color, #1a1a1a)', outline: 'none' }}>
                         <option>Table</option>
                       </select>
 
@@ -821,7 +821,7 @@ export default function ProjectDetail() {
                       <div style={{ width: '1px', height: '18px', backgroundColor: 'var(--border-color, #e5e7eb)', margin: '0 4px' }} />
 
                       <button type="button" style={toolbarButtonStyle} title="Text Color"><span style={{ fontSize: '13px', color: '#ef4444', borderBottom: '2px solid #ef4444', lineHeight: 1 }}>A</span></button>
-                      <button type="button" style={toolbarButtonStyle} title="Text Background"><span style={{ fontSize: '13px', backgroundColor: '#fef08a', color: '#1a1a1a', padding: '0 2px', borderRadius: '2px', lineHeight: 1 }}>A</span></button>
+                      <button type="button" style={toolbarButtonStyle} title="Text Background"><span style={{ fontSize: '13px', backgroundColor: '#fef08a', color: 'var(--text-color)', padding: '0 2px', borderRadius: '2px', lineHeight: 1 }}>A</span></button>
                       <button type="button" style={toolbarButtonStyle} title="Blockquote"><span style={{ fontSize: '13px', fontFamily: 'serif', fontWeight: 'bold' }}>“</span></button>
                       <button type="button" style={toolbarButtonStyle} title="Code Block"><span style={{ fontSize: '11px', fontFamily: 'monospace', fontWeight: 'bold' }}>&lt;/&gt;</span></button>
                       
@@ -856,7 +856,7 @@ export default function ProjectDetail() {
                         padding: '12px 16px',
                         fontSize: '14px',
                         color: 'var(--text-color, #1a1a1a)',
-                        backgroundColor: '#ffffff',
+                        backgroundColor: 'var(--card-bg)',
                         fontFamily: 'var(--font-family, Inter, sans-serif)',
                         resize: 'vertical',
                         boxSizing: 'border-box'

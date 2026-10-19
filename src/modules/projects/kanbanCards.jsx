@@ -60,7 +60,7 @@ export function TimesheetCard({ timesheet }) {
       <div style={mono}>{timesheet.project || 'No project'}</div>
       <div style={row}>
         <span style={mono}>{timesheet.customer || '—'}</span>
-        <span style={{ ...mono, color: '#15803d', fontWeight: 600 }}>{formatINR(timesheet.totalBillableAmount)}</span>
+        <span style={{ ...mono, color: 'var(--st-green-fg)', fontWeight: 600 }}>{formatINR(timesheet.totalBillableAmount)}</span>
       </div>
     </>
   );

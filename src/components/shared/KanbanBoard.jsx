@@ -31,7 +31,7 @@ export default function KanbanBoard({ columns, items, getColumn, getId, onMove, 
 
   const allColumns = useMemo(() => {
     const known = new Set(columns.map((c) => c.id));
-    const extra = [...new Set(items.map(getColumn))].filter((id) => id && !known.has(id)).map((id) => ({ id, label: id, color: '#9ca3af' }));
+    const extra = [...new Set(items.map(getColumn))].filter((id) => id && !known.has(id)).map((id) => ({ id, label: id, color: 'var(--text-muted)' }));
     return [...columns, ...extra];
   }, [columns, items, getColumn]);
 

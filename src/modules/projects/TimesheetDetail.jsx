@@ -215,8 +215,8 @@ export default function TimesheetDetail() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{ 
-            backgroundColor: isSaved ? '#f0fdf4' : '#fff7ed',
-            color: isSaved ? '#15803d' : '#b45309',
+            backgroundColor: isSaved ? 'var(--st-green-bg)' : 'var(--st-amber-bg)',
+            color: isSaved ? 'var(--st-green-fg)' : 'var(--st-amber-fg)',
             padding: '2px 8px', 
             borderRadius: '12px', 
             fontSize: '11px', 
@@ -232,8 +232,8 @@ export default function TimesheetDetail() {
             onClick={handleStartTimer}
             style={{ 
               ...headerButtonStyle, 
-              backgroundColor: timerRunning ? '#fef2f2' : '#f3f4f6', 
-              color: timerRunning ? '#ef4444' : '#374151' 
+              backgroundColor: timerRunning ? 'rgba(239,68,68,0.15)' : 'var(--surface-gray-2)', 
+              color: timerRunning ? '#ef4444' : 'var(--text-light)' 
             }}
           >
             <Clock size={14} />

@@ -5,10 +5,10 @@ import { can } from '../../lib/permissions';
 
 const CURRENCIES = ['INR', 'USD', 'EUR', 'AED'];
 
-const card = { backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' };
-const cardTitle = { fontSize: '14px', fontWeight: 600, color: '#1a1a2e', margin: '0 0 16px 0', paddingBottom: '10px', borderBottom: '1px solid #f3f4f6' };
+const card = { backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '20px 24px', marginBottom: '16px' };
+const cardTitle = { fontSize: '14px', fontWeight: 600, color: 'var(--text-color)', margin: '0 0 16px 0', paddingBottom: '10px', borderBottom: '1px solid var(--divider-color)' };
 const row = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid #f9fafb' };
-const control = { border: '1px solid #e5e7eb', borderRadius: '6px', padding: '6px 10px', fontSize: '13px', color: '#1a1a2e', outline: 'none', backgroundColor: '#ffffff' };
+const control = { border: '1px solid var(--border-color)', borderRadius: '6px', padding: '6px 10px', fontSize: '13px', color: 'var(--text-color)', outline: 'none', backgroundColor: 'var(--card-bg)' };
 
 function Toggle({ isOn, onToggle, disabled }) {
   return (
@@ -16,9 +16,9 @@ function Toggle({ isOn, onToggle, disabled }) {
       onClick={disabled ? undefined : onToggle}
       role="switch"
       aria-checked={isOn}
-      style={{ width: '40px', height: '22px', borderRadius: '11px', background: isOn ? '#3b82f6' : '#e5e7eb', cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.6 : 1, display: 'flex', alignItems: 'center', padding: '0 2px', transition: 'background 0.2s', boxSizing: 'border-box' }}
+      style={{ width: '40px', height: '22px', borderRadius: '11px', background: isOn ? '#3b82f6' : 'var(--surface-gray-4)', cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.6 : 1, display: 'flex', alignItems: 'center', padding: '0 2px', transition: 'background 0.2s', boxSizing: 'border-box' }}
     >
-      <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: '#ffffff', transform: `translateX(${isOn ? '18px' : '0'})`, transition: 'transform 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} />
+      <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--card-bg)', transform: `translateX(${isOn ? '18px' : '0'})`, transition: 'transform 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }} />
     </div>
   );
 }
@@ -27,8 +27,8 @@ function Row({ title, hint, children }) {
   return (
     <div style={row}>
       <div>
-        <div style={{ fontSize: '13px', color: '#374151' }}>{title}</div>
-        <div style={{ fontSize: '11px', color: '#9ca3af' }}>{hint}</div>
+        <div style={{ fontSize: '13px', color: 'var(--text-light)' }}>{title}</div>
+        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{hint}</div>
       </div>
       {children}
     </div>
@@ -46,7 +46,7 @@ export default function ProjectsSettings() {
     if (settings && !form) setForm(settings);
   }, [settings, form]);
 
-  if (!loaded || !form) return <div style={{ padding: '40px', color: '#6b7280', fontSize: '14px' }}>Loading…</div>;
+  if (!loaded || !form) return <div style={{ padding: '40px', color: 'var(--text-muted)', fontSize: '14px' }}>Loading…</div>;
 
   const set = (k, v) => { setForm((f) => ({ ...f, [k]: v })); setStatus(''); };
   const save = async () => {
@@ -61,10 +61,10 @@ export default function ProjectsSettings() {
   };
 
   return (
-    <div style={{ padding: '24px 20px', fontFamily: 'Inter, sans-serif', color: '#1a1a2e', backgroundColor: '#f8f9fa', minHeight: '100%' }}>
+    <div style={{ padding: '24px 20px', fontFamily: 'Inter, sans-serif', color: 'var(--text-color)', backgroundColor: 'var(--surface-gray-1)', minHeight: '100%' }}>
       <div style={{ maxWidth: '700px', margin: '0 auto', width: '100%' }}>
         {!editable && (
-          <div style={{ marginBottom: '16px', fontSize: '12px', color: '#6b7280' }}>Only admins and managers can change these settings.</div>
+          <div style={{ marginBottom: '16px', fontSize: '12px', color: 'var(--text-muted)' }}>Only admins and managers can change these settings.</div>
         )}
 
         <div style={card}>
@@ -113,7 +113,7 @@ export default function ProjectsSettings() {
         {editable && (
           <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '12px' }}>
             {status && <span style={{ fontSize: '12px', color: '#16a34a' }}>{status}</span>}
-            <button onClick={save} style={{ background: '#111111', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '8px 24px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+            <button onClick={save} style={{ background: 'var(--gray-900)', color: '#ffffff', border: 'none', borderRadius: '6px', padding: '8px 24px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
               Save Settings
             </button>
           </div>

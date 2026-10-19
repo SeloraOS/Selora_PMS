@@ -16,33 +16,35 @@ import {
 import './projects.css';
 import { useProjects } from '../../context/ProjectsContext';
 import { useAlerts } from '../../lib/useAlerts';
+import { useChartTheme } from '../../lib/useChartTheme';
 import { entryRows, dashboardStats, monthlyHours, todayStr, formatINR } from '../../lib/reportData';
 import StatCard from '../../components/shared/StatCard';
 import ChartCard from '../../components/shared/ChartCard';
 
 // ─── Shared line chart component ──────────────────────────────────────────────
 function ProjectsLineChart({ data }) {
+  const chart = useChartTheme();
   return (
     <ChartContainer width="100%" height={220}>
       <RechartsLineChart data={data} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
-        <RechartsCartesianGrid vertical={false} stroke="#232323" />
+        <RechartsCartesianGrid vertical={false} stroke={chart.grid} />
         <RechartsXAxis
           dataKey="date"
-          tick={{ fontSize: 13, fill: '#7c7c7c', fontFamily: 'Inter, sans-serif' }}
+          tick={{ fontSize: 13, fill: chart.axis, fontFamily: 'Inter, sans-serif' }}
           axisLine={false}
           tickLine={false}
           interval="preserveStartEnd"
         />
         <RechartsYAxis
           allowDecimals={false}
-          tick={{ fontSize: 13, fill: '#7c7c7c', fontFamily: 'Inter, sans-serif' }}
+          tick={{ fontSize: 13, fill: chart.axis, fontFamily: 'Inter, sans-serif' }}
           axisLine={false}
           tickLine={false}
         />
         <RechartsLine
           type="monotone"
           dataKey="value"
-          stroke="#e83e8c" // Pink line matching the screenshot
+          stroke={chart.line}
           strokeWidth={1.5}
           dot={false}
           isAnimationActive={false}
@@ -127,6 +129,7 @@ export default function ProjectsDashboard() {
 
   const timeTrackingLinks = [
     { label: 'Timesheet', route: '/projects/timesheet', arrow: true },
+    { label: 'Calendar', route: '/projects/calendar', arrow: true },
     { label: 'Activity Type', route: '/projects/setup/activity-type', arrow: true },
     { label: 'Activity Cost', route: '/projects/setup/activity-cost', arrow: true },
   ];

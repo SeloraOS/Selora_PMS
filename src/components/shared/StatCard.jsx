@@ -32,7 +32,7 @@ export default function StatCard({ title, value }) {
             cursor: 'pointer',
             padding: '2px',
             borderRadius: '4px',
-            color: moreHovered ? '#7c7c7c' : '#383838',
+            color: moreHovered ? '#7c7c7c' : 'var(--text-faint)',
             display: 'flex',
             alignItems: 'center',
             flexShrink: 0,

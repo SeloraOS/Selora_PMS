@@ -32,6 +32,12 @@ export const PROJECTS_SIDEBAR_CONFIG = {
       icon: 'Clock',
       route: '/projects/timesheet',
     },
+    {
+      key: 'calendar',
+      label: 'Calendar',
+      icon: 'CalendarDays',
+      route: '/projects/calendar',
+    },
   ],
   setup: [
     {

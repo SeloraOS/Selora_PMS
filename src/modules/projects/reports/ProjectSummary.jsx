@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { useChartTheme } from '../../../lib/useChartTheme';
 import { useProjects } from '../../../context/ProjectsContext';
 import { countBy, projectProgress, isClosed, formatINR } from '../../../lib/reportData';
 import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv } from '../../../components/shared/ReportParts';
@@ -8,6 +9,7 @@ const STATUS_COLORS = { Open: '#3b82f6', Completed: '#22c55e', Cancelled: '#ef44
 const FALLBACK = ['#f59e0b', '#7c3aed', '#14b8a6', '#ec4899'];
 
 export default function ProjectSummary() {
+  const chart = useChartTheme();
   const { projects, projectTasks } = useProjects();
 
   const rows = useMemo(() => projects.map((p) => {
@@ -48,22 +50,22 @@ export default function ProjectSummary() {
         <ChartCard title="Projects by Status" empty={!projects.length}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={byStatus} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={2} dataKey="value">
+              <Pie isAnimationActive={false} data={byStatus} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={2} dataKey="value">
                 {byStatus.map((e, i) => <Cell key={i} fill={e.color} />)}
               </Pie>
               <Tooltip contentStyle={tooltipStyle} />
-              <Legend verticalAlign="top" height={28} wrapperStyle={{ fontSize: '12px', color: '#6b7280' }} />
+              <Legend verticalAlign="top" height={28} wrapperStyle={{ fontSize: '12px' }} formatter={(v) => <span style={{ color: 'var(--text-muted)' }}>{v}</span>} />
             </PieChart>
           </ResponsiveContainer>
         </ChartCard>
         <ChartCard title="Tasks per Project" empty={!rows.length}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={rows} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} angle={-20} textAnchor="end" interval={0} />
-              <YAxis axisLine={false} tickLine={false} allowDecimals={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#f3f4f6' }} />
-              <Legend verticalAlign="top" height={28} wrapperStyle={{ fontSize: '12px', color: '#6b7280' }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chart.grid} />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: chart.axis }} angle={-20} textAnchor="end" interval={0} />
+              <YAxis axisLine={false} tickLine={false} allowDecimals={false} tick={{ fontSize: 12, fill: chart.axis }} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--divider-color)' }} />
+              <Legend verticalAlign="top" height={28} wrapperStyle={{ fontSize: '12px' }} formatter={(v) => <span style={{ color: 'var(--text-muted)' }}>{v}</span>} />
               <Bar dataKey="done" name="Completed" stackId="a" fill="#22c55e" />
               <Bar dataKey="open" name="Open" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
             </BarChart>

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
+import { useChartTheme } from '../../../lib/useChartTheme';
 import { useProjects } from '../../../context/ProjectsContext';
 import { delayedTasks, delayBuckets, countBy, todayStr } from '../../../lib/reportData';
 import { ReportPage, ReportHeader, StatRow, StatCard, ChartRow, ChartCard, ReportTable, tooltipStyle, downloadCsv } from '../../../components/shared/ReportParts';
@@ -8,6 +9,7 @@ const fmtDate = (d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-GB'
 const delayColor = (days) => (days > 7 ? '#7c3aed' : days >= 4 ? '#ef4444' : '#f59e0b');
 
 export default function DelayedTasksSummary() {
+  const chart = useChartTheme();
   const { projectTasks } = useProjects();
   const today = todayStr();
   const delayed = useMemo(() => delayedTasks(projectTasks, today).map((t) => ({ ...t, key: t.id })), [projectTasks, today]);
@@ -37,10 +39,10 @@ export default function DelayedTasksSummary() {
         <ChartCard title="Delays by Project" empty={!delayed.length}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={byProject} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#6b7280' }} angle={-20} textAnchor="end" interval={0} />
-              <YAxis axisLine={false} tickLine={false} allowDecimals={false} tick={{ fontSize: 12, fill: '#6b7280' }} />
-              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#f3f4f6' }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chart.grid} />
+              <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: chart.axis }} angle={-20} textAnchor="end" interval={0} />
+              <YAxis axisLine={false} tickLine={false} allowDecimals={false} tick={{ fontSize: 12, fill: chart.axis }} />
+              <Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'var(--divider-color)' }} />
               <Bar dataKey="delayed" fill="#ef4444" radius={[4, 4, 0, 0]} barSize={40} />
             </BarChart>
           </ResponsiveContainer>
@@ -48,11 +50,11 @@ export default function DelayedTasksSummary() {
         <ChartCard title="Delay Duration" empty={!delayed.length}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={buckets} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
+              <Pie isAnimationActive={false} data={buckets} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2} dataKey="value">
                 {buckets.map((e, i) => <Cell key={i} fill={e.color} />)}
               </Pie>
               <Tooltip contentStyle={tooltipStyle} />
-              <Legend wrapperStyle={{ fontSize: '12px', color: '#6b7280' }} />
+              <Legend wrapperStyle={{ fontSize: '12px' }} formatter={(v) => <span style={{ color: 'var(--text-muted)' }}>{v}</span>} />
             </PieChart>
           </ResponsiveContainer>
         </ChartCard>

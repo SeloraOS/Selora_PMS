@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { Folder } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import ThemeToggle from '../components/shared/ThemeToggle';
 
 const inputStyle = {
   width: '100%',
@@ -41,7 +42,8 @@ export default function Login() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f0f', padding: '16px' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f0f0f', padding: '16px', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: '16px', right: '16px' }}><ThemeToggle /></div>
       <form onSubmit={submit} style={{ width: '100%', maxWidth: '340px', background: '#0f0f0f', border: '1px solid #1c1c1c', borderRadius: '10px', padding: '28px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
           <div style={{ width: '32px', height: '32px', background: '#0289f7', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

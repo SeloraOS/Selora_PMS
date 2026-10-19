@@ -94,8 +94,8 @@ export default function SidebarFooter({ isCollapsed }) {
             transition: 'background 0.1s',
           }}
         >
-          <Search size={13} color="#383838" style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: '12px', color: '#383838', flex: 1, whiteSpace: 'nowrap' }}>
+          <Search size={13} color="var(--text-faint)" style={{ flexShrink: 0 }} />
+          <span style={{ fontSize: '12px', color: 'var(--text-faint)', flex: 1, whiteSpace: 'nowrap' }}>
             Search
           </span>
           <div
@@ -105,7 +105,7 @@ export default function SidebarFooter({ isCollapsed }) {
               borderRadius: '4px',
               fontSize: '10px',
               padding: '1px 5px',
-              color: '#383838',
+              color: 'var(--text-faint)',
               flexShrink: 0,
             }}
           >

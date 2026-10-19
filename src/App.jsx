@@ -4,6 +4,7 @@ import { Construction } from 'lucide-react';
 import AppShell from './components/layout/AppShell';
 import { ProjectsProvider } from './context/ProjectsContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Login from './pages/Login';
 import ProjectsDashboard from './modules/projects';
 import ProjectList from './modules/projects/ProjectList';
@@ -23,6 +24,7 @@ import DailyTimesheetSummary from './modules/projects/reports/DailyTimesheetSumm
 import TimesheetBillingSummary from './modules/projects/reports/TimesheetBillingSummary';
 import ProjectWiseCost from './modules/projects/reports/ProjectWiseCost';
 import Users from './modules/projects/Users';
+import Calendar from './modules/projects/Calendar';
 import { SetupProvider } from './context/SetupContext';
 import DelayedTasksSummary from './modules/projects/reports/DelayedTasksSummary';
 import ProjectsSearch from './modules/projects/ProjectsSearch';
@@ -37,7 +39,7 @@ const Placeholder = ({ title }) => (
     justifyContent: 'center',
     height: '100%',
     background: '#0f0f0f',
-    color: '#383838',
+    color: 'var(--text-faint)',
     gap: 12,
   }}>
     <Construction size={40} strokeWidth={1} />
@@ -55,6 +57,7 @@ function RequireAuth({ children }) {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <BrowserRouter>
         <Routes>
@@ -92,6 +95,7 @@ export default function App() {
             <Route path="projects/reports/project-wise-cost" element={<ProjectWiseCost />} />
             <Route path="projects/reports/project-wise-stock-tracking" element={<Navigate to="/projects/reports/project-wise-cost" replace />} />
             <Route path="projects/users" element={<Users />} />
+            <Route path="projects/calendar" element={<Calendar />} />
             <Route path="projects/reports/delayed-tasks-summary" element={<DelayedTasksSummary />} />
             <Route path="projects/settings" element={<ProjectsSettings />} />
             <Route path="projects/getting-started" element={<GettingStarted />} />
@@ -101,5 +105,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </AuthProvider>
+    </ThemeProvider>
   );
 }

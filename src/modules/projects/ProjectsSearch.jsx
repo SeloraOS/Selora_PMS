@@ -11,19 +11,19 @@ function Group({ title, items }) {
   if (!items.length) return null;
   return (
     <>
-      <div style={{ padding: '10px 14px 4px', fontSize: '10px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase' }}>{title}</div>
+      <div style={{ padding: '10px 14px 4px', fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>{title}</div>
       {items.map((it) => (
         <Link
           key={it.to}
           to={it.to}
           style={{ padding: '10px 14px', display: 'flex', gap: '10px', textDecoration: 'none', cursor: 'pointer' }}
-          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f9fafb')}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--surface-gray-1)')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
         >
-          <div style={{ width: '28px', height: '28px', backgroundColor: '#f3f4f6', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>{it.icon}</div>
+          <div style={{ width: '28px', height: '28px', backgroundColor: 'var(--surface-gray-2)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px' }}>{it.icon}</div>
           <div>
-            <div style={{ fontSize: '13px', color: '#1a1a2e', fontWeight: 500 }}>{it.title}</div>
-            <div style={{ fontSize: '11px', color: '#6b7280' }}>{it.subtitle}</div>
+            <div style={{ fontSize: '13px', color: 'var(--text-color)', fontWeight: 500 }}>{it.title}</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{it.subtitle}</div>
           </div>
         </Link>
       ))}
@@ -55,24 +55,24 @@ export default function ProjectsSearch() {
   const label = (name) => (q ? name : `Recent ${name}`);
 
   return (
-    <div style={{ fontFamily: 'Inter, sans-serif', backgroundColor: '#f8f9fa', minHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '60px' }}>
-      <div style={{ width: '600px', maxWidth: '90vw', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '12px 16px', display: 'flex', gap: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', alignItems: 'center' }}>
+    <div style={{ fontFamily: 'Inter, sans-serif', backgroundColor: 'var(--surface-gray-1)', minHeight: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: '60px' }}>
+      <div style={{ width: '600px', maxWidth: '90vw', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px 16px', display: 'flex', gap: '10px', boxShadow: '0 4px 12px rgba(0,0,0,0.08)', alignItems: 'center' }}>
         <Search size={18} color="#9ca3af" />
         <input
           type="text"
           placeholder="Search projects, tasks, timesheets…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '15px', color: '#1a1a2e' }}
+          style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', fontSize: '15px', color: 'var(--text-color)' }}
           autoFocus
         />
       </div>
 
-      <div style={{ width: '600px', maxWidth: '90vw', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '10px', marginTop: '8px', overflow: 'hidden', maxHeight: '480px', overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+      <div style={{ width: '600px', maxWidth: '90vw', backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px', marginTop: '8px', overflow: 'hidden', maxHeight: '480px', overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
         <Group title={label('Projects')} items={groups.projects} />
         <Group title={label('Tasks')} items={groups.tasks} />
         <Group title={label('Timesheets')} items={groups.timesheets} />
-        {none && <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: '#9ca3af' }}>Nothing matches “{query}”.</div>}
+        {none && <div style={{ padding: '24px', textAlign: 'center', fontSize: '13px', color: 'var(--text-muted)' }}>Nothing matches “{query}”.</div>}
       </div>
     </div>
   );
