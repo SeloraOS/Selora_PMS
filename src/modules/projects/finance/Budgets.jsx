@@ -14,6 +14,7 @@ import { budgetHealth, totals } from '../../../lib/finance';
 import ViewMenu from '../../../components/shared/ViewMenu';
 import { SortMenu, ColumnsMenu, ExportMenu } from '../../../components/shared/ListMenus';
 import KanbanBoard from '../../../components/shared/KanbanBoard';
+import SearchBox from '../../../components/shared/SearchBox';
 import { BudgetCard } from '../rowCards';
 import { control, Pill } from './shared';
 
@@ -113,6 +114,7 @@ export default function Budgets() {
   const alertPct = settings?.budget_overrun_alert_percent ?? 90;
   const [projectId, setProjectId] = useState(() => { try { return localStorage.getItem('selora-budget-project') || ''; } catch { return ''; } });
   const [showFilters, setShowFilters] = useState(false);
+  const [search, setSearch] = useState('');
   const [fHealth, setFHealth] = useState('');
   const [editing, setEditing] = useState(null);
   const [history, setHistory] = useState(null);
@@ -138,7 +140,8 @@ export default function Budgets() {
     return out;
   }, [projects, costHeads, budgets, summary, projectId, alertPct]);
 
-  const filtered = lines.filter((l) => (board && pipeline.id === 'health') || !fHealth || l.health.key === fHealth);
+  const q = search.trim().toLowerCase();
+  const filtered = lines.filter((l) => ((board && pipeline.id === 'health') || !fHealth || l.health.key === fHealth) && (!q || `${l.head.name} ${l.projectName}`.toLowerCase().includes(q)));
   const sorted = sortRows(filtered, prefs.sortColumn, prefs.sort.order);
   const sum = totals(lines);
   const committedPct = sum.budget > 0 ? Math.round((sum.committed / sum.budget) * 100) : null;
@@ -171,6 +174,7 @@ export default function Budgets() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', borderBottom: '1px solid var(--border-color)', gap: '8px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <ViewMenu view={view} setView={setView} pipelines={pipelines} pipeline={pipeline} setPipeline={setPipeline} />
+          <SearchBox value={search} onChange={setSearch} placeholder="Search cost heads…" />
           <select aria-label="Project" value={projectId} onChange={(e) => pickProject(e.target.value)} style={{ ...control, color: 'var(--text-color)' }}>
             <option value="">All projects</option>
             {projects.map((p) => <option key={p.dbId} value={p.dbId}>{p.projectName}</option>)}

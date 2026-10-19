@@ -8,6 +8,8 @@ import { SortMenu, ColumnsMenu, ExportMenu } from '../../components/shared/ListM
 import RecordTable from '../../components/shared/RecordTable';
 import { sortRows } from '../../lib/sortRows';
 import { useListPrefs } from '../../lib/useListPrefs';
+import SearchBox from '../../components/shared/SearchBox';
+import { searchRows } from '../../lib/searchRows';
 import { TIMESHEET_COLUMNS } from './listColumns';
 import { useSetup } from '../../context/SetupContext';
 import KanbanBoard from '../../components/shared/KanbanBoard';
@@ -28,6 +30,7 @@ export default function TimesheetList() {
 
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
+  const [search, setSearch] = useState('');
   const [filterId, setFilterId] = useState('');
   const [filterEmployee, setFilterEmployee] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -40,7 +43,7 @@ export default function TimesheetList() {
            (filterProject ? (ts.project || '').toLowerCase().includes(filterProject.toLowerCase()) : true);
   });
 
-  const sortedTimesheets = sortRows(filteredTimesheets, prefs.sortColumn, prefs.sort.order);
+  const sortedTimesheets = sortRows(searchRows(filteredTimesheets, TIMESHEET_COLUMNS, search), prefs.sortColumn, prefs.sort.order);
 
   const clearFilters = () => { setFilterId(''); setFilterEmployee(''); setFilterStatus(''); setFilterProject(''); };
 
@@ -56,6 +59,7 @@ export default function TimesheetList() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', borderBottom: '1px solid var(--border-color, #e5e7eb)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ViewMenu view={view} setView={setView} pipelines={pipelines} pipeline={pipeline} setPipeline={setPipeline} />
+          <SearchBox value={search} onChange={setSearch} placeholder="Search timesheets…" />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

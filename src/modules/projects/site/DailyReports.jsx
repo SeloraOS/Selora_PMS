@@ -10,6 +10,8 @@ import ViewMenu from '../../../components/shared/ViewMenu';
 import { SortMenu, ColumnsMenu, ExportMenu } from '../../../components/shared/ListMenus';
 import RecordTable from '../../../components/shared/RecordTable';
 import KanbanBoard from '../../../components/shared/KanbanBoard';
+import SearchBox from '../../../components/shared/SearchBox';
+import { searchRows } from '../../../lib/searchRows';
 import { ReportCard } from '../rowCards';
 import { useSite } from '../../../context/SiteContext';
 import { useSetup } from '../../../context/SetupContext';
@@ -47,6 +49,7 @@ export function DailyReportList() {
   const prefs = useListPrefs('dailyReport', REPORT_COLUMNS, { key: 'report_date', order: 'desc' });
   const selection = useSelection();
   const [showFilters, setShowFilters] = useState(false);
+  const [search, setSearch] = useState('');
   const [fProject, setFProject] = useState('');
   const [fStatus, setFStatus] = useState('');
   const board = view === 'kanban';
@@ -56,7 +59,7 @@ export function DailyReportList() {
     ...r, id: r.id, project: ctx.projectName(r.project_id), people: totalManpower(r.daily_report_manpower), lines: r.daily_report_work?.length || 0,
   })), [reports, ctx]);
   const filtered = rows.filter((r) => (!fProject || r.project_id === fProject) && ((board && pipeline.id === 'status') || !fStatus || r.status === fStatus));
-  const sorted = sortRows(filtered, prefs.sortColumn, prefs.sort.order);
+  const sorted = sortRows(searchRows(filtered, REPORT_COLUMNS, search, (r) => `${r.summary || ''} ${r.blockers || ''}`), prefs.sortColumn, prefs.sort.order);
   const columns = prefs.visibleColumns.map((c) => ({
     ...c,
     render: (r) => (c.key === 'report_date' ? fmt(r.report_date) : c.key === 'status' ? (
@@ -70,7 +73,10 @@ export function DailyReportList() {
   return (
     <div data-testid="dpr-list" style={{ fontFamily: 'var(--font-family)', color: 'var(--text-color)', backgroundColor: 'var(--bg-color)', minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', borderBottom: '1px solid var(--border-color)', gap: '8px', flexWrap: 'wrap' }}>
-        <ViewMenu view={view} setView={setView} pipelines={pipelines} pipeline={pipeline} setPipeline={setPipeline} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <ViewMenu view={view} setView={setView} pipelines={pipelines} pipeline={pipeline} setPipeline={setPipeline} />
+          <SearchBox value={search} onChange={setSearch} placeholder="Search reports…" />
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           {pending > 0 && <span style={{ ...muted, display: 'inline-flex', gap: '4px', alignItems: 'center' }}><WifiOff size={12} /> {pending} waiting to send</span>}
           <button onClick={() => setShowFilters(!showFilters)} style={{ ...btn, backgroundColor: showFilters ? 'var(--surface-gray-2)' : 'var(--control-bg)' }}><Filter size={14} /> Filter</button>

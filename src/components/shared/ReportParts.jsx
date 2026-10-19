@@ -1,5 +1,7 @@
 /** Shared building blocks for the Projects report pages. */
 import React from 'react';
+import SearchBox from './SearchBox';
+import { searchRows } from '../../lib/searchRows';
 
 export const tooltipStyle = { background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '6px', color: 'var(--text-color)' };
 
@@ -52,8 +54,12 @@ export const ChartCard = ({ title, children, height = '260px', empty }) => (
 );
 
 /** columns: [{ label, render(row), align?, color?(row) }] */
-export function ReportTable({ columns, rows, empty = 'No data to show.' }) {
+export function ReportTable({ columns, rows: allRows, empty = 'No data to show.' }) {
+  const [q, setQ] = React.useState('');
+  const rows = searchRows(allRows, columns, q);
   return (
+    <div>
+    {allRows.length > 5 && <div style={{ marginBottom: '8px' }}><SearchBox value={q} onChange={setQ} placeholder="Search this report…" width={260} /></div>}
     <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'auto' }}>
       <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
         <thead style={{ background: 'var(--surface-gray-1)' }}>
@@ -76,6 +82,7 @@ export function ReportTable({ columns, rows, empty = 'No data to show.' }) {
           ))}
         </tbody>
       </table>
+    </div>
     </div>
   );
 }

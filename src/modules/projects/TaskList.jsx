@@ -12,6 +12,8 @@ import { TASK_COLUMNS } from './listColumns';
 import { useSetup } from '../../context/SetupContext';
 import KanbanBoard from '../../components/shared/KanbanBoard';
 import { TaskCard } from './kanbanCards';
+import SearchBox from '../../components/shared/SearchBox';
+import { searchRows } from '../../lib/searchRows';
 import { todayStr } from '../../lib/reportData';
 import GanttChart from './site/GanttChart';
 import BulkDeleteButton from '../../components/shared/BulkDeleteButton';
@@ -40,6 +42,7 @@ export default function TaskList() {
 
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
+  const [search, setSearch] = useState('');
   const [filterId, setFilterId] = useState('');
   const [filterSubject, setFilterSubject] = useState('');
   const [filterProject, setFilterProject] = useState('');
@@ -70,7 +73,7 @@ export default function TaskList() {
            (filterPriority ? task.priority === filterPriority : true);
   });
 
-  const sortedTasks = sortRows(filteredTasks, prefs.sortColumn, prefs.sort.order);
+  const sortedTasks = sortRows(searchRows(filteredTasks, TASK_COLUMNS, search), prefs.sortColumn, prefs.sort.order);
 
   const clearFilters = () => { setFilterId(''); setFilterSubject(''); setFilterProject(''); setFilterStatus(''); setFilterPriority(''); };
 
@@ -84,6 +87,7 @@ export default function TaskList() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', borderBottom: '1px solid var(--border-color, #e5e7eb)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ViewMenu views={TASK_VIEWS} view={view} setView={setView} pipelines={pipelines} pipeline={pipeline} setPipeline={setPipeline} />
+          <SearchBox value={search} onChange={setSearch} placeholder="Search tasks…" />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

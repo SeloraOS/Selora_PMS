@@ -8,6 +8,8 @@ import { SortMenu, ColumnsMenu, ExportMenu } from '../../components/shared/ListM
 import RecordTable from '../../components/shared/RecordTable';
 import { sortRows } from '../../lib/sortRows';
 import { useListPrefs } from '../../lib/useListPrefs';
+import SearchBox from '../../components/shared/SearchBox';
+import { searchRows } from '../../lib/searchRows';
 import { PROJECT_COLUMNS } from './listColumns';
 import KanbanBoard from '../../components/shared/KanbanBoard';
 import { ProjectCard } from './kanbanCards';
@@ -37,6 +39,7 @@ export default function ProjectList() {
 
   // Filter states
   const [showFilters, setShowFilters] = useState(false);
+  const [search, setSearch] = useState('');
   const [filterId, setFilterId] = useState('');
   const [filterName, setFilterName] = useState('');
   const [filterStatus, setFilterStatus] = useState('Open');
@@ -88,7 +91,7 @@ export default function ProjectList() {
   });
 
   // Sort logic
-  const sortedProjects = sortRows(filteredProjects, prefs.sortColumn, prefs.sort.order);
+  const sortedProjects = sortRows(searchRows(filteredProjects, PROJECT_COLUMNS, search), prefs.sortColumn, prefs.sort.order);
 
   const clearFilters = () => {
     setFilterId('');
@@ -133,6 +136,7 @@ export default function ProjectList() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 24px', borderBottom: '1px solid var(--border-color, #e5e7eb)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <ViewMenu view={view} setView={setView} pipelines={pipelines} pipeline={pipeline} setPipeline={setPipeline} />
+          <SearchBox value={search} onChange={setSearch} placeholder="Search projects…" />
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
