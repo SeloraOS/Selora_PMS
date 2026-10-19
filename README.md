@@ -19,7 +19,7 @@ SQL lives in `supabase/`. The database runs on the VPS; apply files in order wit
 
 1. `supabase/migrations/0001` to `0017` (schema, RLS, realtime, rates, task links, integrity rules, holidays, timesheet task link, auto close)
 2. `supabase/seed.sql` (project/activity types), then optionally the real-estate demo data:
-   `supabase/seed_demo.sql`, `supabase/seed_demo_extra.sql` (needs the user `demo@selora.test`).
+   `supabase/seed_demo.sql`, `seed_demo_extra.sql`, `seed_demo_more.sql` (needs the user `demo@seloraos.online`).
 
 Roles: sign-ups are always `member`. Promote the first admin yourself:
 

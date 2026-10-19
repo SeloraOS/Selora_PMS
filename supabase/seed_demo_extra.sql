@@ -1,10 +1,10 @@
 -- Demo data layer 2: rates, templates, project updates, task links. Run after seed.sql + seed_demo.sql. Idempotent.
 do $$
 declare
-  u uuid := (select id from auth.users where email = 'demo@selora.test');
+  u uuid := (select id from auth.users where email = 'demo@seloraos.online');
 begin
   -- the demo account is the dev admin (credentials live only in the gitignored .env.local)
-  update public.profiles set role = 'admin' where email = 'demo@selora.test';
+  update public.profiles set role = 'admin' where email = 'demo@seloraos.online';
 
   update public.activity_types set billing_type = 'Hourly';
   update public.activity_types set billing_type = 'Daily' where name in ('Site Supervision','Property Inspection');

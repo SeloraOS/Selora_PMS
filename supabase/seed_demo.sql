@@ -1,7 +1,7 @@
 -- Real-estate firm demo data. Idempotent: replaces everything created by the demo user.
 do $$
 declare
-  u uuid := (select id from auth.users where email = 'demo@selora.test');
+  u uuid := (select id from auth.users where email = 'demo@seloraos.online');
   p1 uuid; p2 uuid; p3 uuid; p4 uuid; p5 uuid; p6 uuid; ts uuid;
 begin
   delete from public.timesheets   where created_by = u;

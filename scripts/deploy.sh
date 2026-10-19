@@ -16,7 +16,7 @@ npm test --silent
 npm run build
 
 # Never ship demo credentials in a production bundle
-if grep -rqE "demo@selora\.test|demo1234" dist/; then
+if grep -rqE "demo@seloraos\.online|demo1234" dist/; then
   if grep -q "^VITE_DEMO_" .env.production; then echo "note: demo credentials prefill is enabled in .env.production"; else
     echo "demo credentials found in dist/ but not requested in .env.production" >&2; exit 1; fi
 fi
