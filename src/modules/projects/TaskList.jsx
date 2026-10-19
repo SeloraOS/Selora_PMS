@@ -15,7 +15,7 @@ import { TaskCard } from './kanbanCards';
 import { todayStr } from '../../lib/reportData';
 import BulkDeleteButton from '../../components/shared/BulkDeleteButton';
 import { 
-  Filter, RefreshCw, MoreHorizontal, Plus, CheckSquare, X
+  Filter, RefreshCw, Plus, CheckSquare, X
 } from 'lucide-react';
 
 export default function TaskList() {
@@ -90,7 +90,6 @@ export default function TaskList() {
           </button>
           <SortMenu columns={TASK_COLUMNS} sort={prefs.sort} onChange={prefs.setSort} />
           <ColumnsMenu columns={TASK_COLUMNS} visibleSet={prefs.visibleSet} onToggle={prefs.toggleColumn} onReset={prefs.resetColumns} disabled={view === 'kanban'} disabledHint="Columns apply to the list view" />
-          <button style={{ ...buttonStyle, padding: '6px 8px' }}><MoreHorizontal size={14} /></button>
           <BulkDeleteButton rows={sortedTasks.filter(r => selection.has(r.id))} label="task" onDelete={deleteProjectTask} onDone={selection.clear} />
           <button onClick={handleOpenModal} style={{ backgroundColor: 'var(--gray-900, #111827)', border: '1px solid var(--gray-900, #111827)', color: '#ffffff', padding: '6px 14px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', marginLeft: '8px' }}>
             <Plus size={14} /> Add Task
