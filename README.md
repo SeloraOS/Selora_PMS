@@ -63,6 +63,18 @@ Migrations `0022`-`0025` (additive): `trades`, `snag_categories`, `daily_reports
 - **Alerts and calendar:** the notification drawer lists expiring/expired approvals, overdue snags and projects with no report after the cut-off; the calendar gains Approval expiry and Snags due events.
 - **Settings (Projects Settings > Site):** daily report required + cut-off time, approval warning days, snag default due days, working days. Trades and snag categories are managed under Setup.
 
+## Money (beta, Phase 3)
+
+Migrations `0026`-`0029` (additive): `cost_heads`, `vendors`, `budgets` (+ `budget_revisions`), `work_orders`, `ra_bills`, `payments`, `material_requests`, the `finance_summary` view and the Phase 3 `pm_settings` columns. Demo data: `supabase/seed_demo_finance.sql`. The money rules live in the database (triggers), the UI mirrors them in `src/lib/finance.js`.
+
+- **Budgets** per project and cost head; every change to an amount is a new revision. Admin/manager edit, other internal users read.
+- **Work orders**: draft, pending approval, approved, closed, cancelled. Admins and managers approve any value; other internal users only up to the approval limit (Settings > Finance). Approved orders cannot go back to draft, and the value cannot drop below what has been billed.
+- **RA bills**: raised against an approved work order. Retention (from the order), TDS and GST (from settings) are snapshotted on the bill; net = gross + GST - retention - TDS. Flow: draft, submitted, approved (same value-limit rule), rejected; the status becomes paid automatically when payments reach the net amount. The sum of a work order's bills can never exceed its value; payments can never exceed the net amount and only exist on approved bills (admin/manager record them).
+- **Vendors** can be linked to a contractor login (Setup > Vendors). That contractor sees only their own work orders, bills and payments (Work Orders / RA Bills), can raise and submit bills, and never sees budgets, other vendors or the finance dashboard. Clients see no finance data.
+- **Finance dashboard** (`/projects/finance`): budget vs committed vs billed vs paid by cost head, budget warnings, overdue payables, cash-flow forecast by due month, planned-vs-actual S-curve per project. **Project wise Cost** now also shows budget, committed, approved bills and paid out.
+- **Material requests** (lite): item, quantity, needed by, status.
+- **Settings (Projects Settings > Finance):** retention %, GST %, TDS %, approval limit, budget warning %, payment terms, financial-year start month, RA bill prefix.
+
 ## Tests and verification
 
     npm test          # unit tests: report aggregation, rates, field mappers

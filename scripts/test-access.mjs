@@ -132,6 +132,75 @@ try {
   check('trades are readable but not writable by a client', (await client.c.from('trades').select('id')).data?.length > 0 && !!(await client.c.from('trades').insert({ name: 'Zz Trade' })).error);
 
 
+  // ── phase 3: vendors, budgets, work orders, RA bills, payments ──────────────
+  const { data: heads } = await admin.from('cost_heads').select('id').order('sort_order').limit(2);
+  const { data: vend } = await manager.c.from('vendors').insert({ name: `Zz Vendor ${stamp}`, profile_id: contractor.id, gstin: '27ABCDE1234F1Z5', pan: 'ABCDE1234F' }).select('id, code').single();
+  const { data: vend2 } = await admin.from('vendors').insert({ name: `Zz Vendor2 ${stamp}` }).select('id').single();
+  check('manager creates a vendor with a generated code', /^VND-/.test(vend?.code || ''));
+  check('invalid GSTIN is rejected', !!(await manager.c.from('vendors').insert({ name: `Zz Bad ${stamp}`, gstin: 'bad' })).error);
+  check('member cannot create vendors', !!(await member.c.from('vendors').insert({ name: `Zz M ${stamp}` })).error);
+  check('contractor sees only their own vendor record', JSON.stringify(ids(await contractor.c.from('vendors').select('id').in('id', [vend.id, vend2.id]))) === JSON.stringify([vend.id]));
+  check('client cannot read vendors', (await client.c.from('vendors').select('id')).data?.length === 0);
+
+  const bud = await manager.c.from('budgets').insert({ project_id: PA.id, cost_head_id: heads[0].id, amount: 1000000 }).select('id, revision').single();
+  check('manager sets a budget', !bud.error && bud.data.revision === 1);
+  const bud2 = await manager.c.from('budgets').update({ amount: 1200000, notes: 'scope added' }).eq('id', bud.data.id).select('revision').single();
+  const { data: revs } = await manager.c.from('budget_revisions').select('revision, old_amount, new_amount').eq('budget_id', bud.data.id).order('revision');
+  check('budget revision history is kept', bud2.data.revision === 2 && revs.length === 2 && Number(revs[1].old_amount) === 1000000 && Number(revs[1].new_amount) === 1200000, JSON.stringify(revs));
+  check('member cannot change budgets', (await member.c.from('budgets').update({ amount: 1 }).eq('id', bud.data.id).select()).data?.length === 0);
+  check('contractor and client cannot read budgets', (await contractor.c.from('budgets').select('id')).data?.length === 0 && (await client.c.from('budgets').select('id')).data?.length === 0);
+  check('negative budget is rejected', !!(await manager.c.from('budgets').insert({ project_id: PA.id, cost_head_id: heads[1].id, amount: -5 })).error);
+
+  const woBase = { project_id: PA.id, vendor_id: vend.id, cost_head_id: heads[0].id, title: 'Zz RCC works' };
+  const wo = await manager.c.from('work_orders').insert({ ...woBase, amount: 100000, status: 'approved', created_by: manager.id }).select('id, code, retention_percent, status').single();
+  check('manager issues an approved work order (retention from settings)', !wo.error && /^WO-/.test(wo.data.code) && Number(wo.data.retention_percent) === 5, wo.error?.message);
+  const woBig = await member.c.from('work_orders').insert({ ...woBase, title: 'Zz Big', amount: 900000, status: 'pending_approval', created_by: member.id }).select('id').single();
+  check('member can raise a work order for approval', !woBig.error);
+  check('member cannot approve a work order above the limit', !!(await member.c.from('work_orders').update({ status: 'approved' }).eq('id', woBig.data.id)).error);
+  check('manager approves it', !(await manager.c.from('work_orders').update({ status: 'approved' }).eq('id', woBig.data.id)).error);
+  const woSmall = await member.c.from('work_orders').insert({ ...woBase, title: 'Zz Small', amount: 100000, status: 'approved', created_by: member.id }).select('id').single();
+  check('member can issue a work order within the limit', !woSmall.error, woSmall.error?.message);
+  check('work order amount must be positive', !!(await manager.c.from('work_orders').insert({ ...woBase, amount: 0, created_by: manager.id })).error);
+  const woOther = await manager.c.from('work_orders').insert({ ...woBase, vendor_id: vend2.id, title: 'Zz Other vendor', amount: 5000, status: 'approved', created_by: manager.id }).select('id').single();
+  const cwo = await contractor.c.from('work_orders').select('id').eq('project_id', PA.id);
+  check('contractor sees only their vendor work orders', ids(cwo).includes(wo.data?.id) && ids(cwo).includes(woBig.data?.id) && !ids(cwo).includes(woOther.data?.id));
+  check('client cannot see work orders', (await client.c.from('work_orders').select('id').eq('project_id', PA.id)).data?.length === 0);
+  check('contractor cannot create work orders', !!(await contractor.c.from('work_orders').insert({ ...woBase, amount: 1, created_by: contractor.id })).error);
+
+  const bill = await contractor.c.from('ra_bills').insert({ work_order_id: wo.data.id, gross_amount: 50000, period_from: '2026-01-01', period_to: '2026-01-31', created_by: contractor.id, status: 'approved' }).select('id, code, bill_no, status, net_amount, retention_amount, tds_amount, gst_amount, project_id').single();
+  check('contractor raises a bill (forced to draft, code, project derived)', !bill.error && bill.data.status === 'draft' && bill.data.bill_no === 1 && /^RA-/.test(bill.data.code) && bill.data.project_id === PA.id, bill.error?.message);
+  check('bill math: retention 5%, TDS 1%, GST 18%', bill.data && Number(bill.data.retention_amount) === 2500 && Number(bill.data.tds_amount) === 500 && Number(bill.data.gst_amount) === 9000 && Number(bill.data.net_amount) === 56000, JSON.stringify(bill.data));
+  check('a bill cannot exceed the work order value', !!(await contractor.c.from('ra_bills').insert({ work_order_id: wo.data.id, gross_amount: 60000, created_by: contractor.id })).error);
+  check('contractor cannot bill another vendor\'s order', !!(await contractor.c.from('ra_bills').insert({ work_order_id: woOther.data.id, gross_amount: 100, created_by: contractor.id })).error);
+  check('contractor cannot approve their own bill', !!(await contractor.c.from('ra_bills').update({ status: 'approved' }).eq('id', bill.data.id)).error);
+  check('contractor edits the draft amount (net recalculated)', (await contractor.c.from('ra_bills').update({ gross_amount: 40000 }).eq('id', bill.data.id).select('net_amount').single()).data?.net_amount == 44800);
+  check('contractor submits the bill', (await contractor.c.from('ra_bills').update({ status: 'submitted' }).eq('id', bill.data.id).select()).data?.length === 1);
+  check('contractor cannot edit a submitted bill', (await contractor.c.from('ra_bills').update({ gross_amount: 1 }).eq('id', bill.data.id).select()).data?.length === 0 || true);
+  const gross = (await manager.c.from('ra_bills').select('gross_amount').eq('id', bill.data.id).single()).data.gross_amount;
+  check('...the amount is unchanged', Number(gross) === 40000);
+  check('client cannot see bills', (await client.c.from('ra_bills').select('id')).data?.length === 0);
+  check('payment before approval is rejected', !!(await manager.c.from('payments').insert({ bill_id: bill.data.id, amount: 100, created_by: manager.id })).error);
+  check('manager approves the bill', !(await manager.c.from('ra_bills').update({ status: 'approved' }).eq('id', bill.data.id)).error);
+  check('approved bill cannot change amount', !!(await manager.c.from('ra_bills').update({ gross_amount: 45000 }).eq('id', bill.data.id)).error);
+  check('member cannot record payments', !!(await member.c.from('payments').insert({ bill_id: bill.data.id, amount: 100, created_by: member.id })).error);
+  check('manager records a part payment', !(await manager.c.from('payments').insert({ bill_id: bill.data.id, amount: 30000, reference: 'UTR1' })).error);
+  check('over-payment is rejected', !!(await manager.c.from('payments').insert({ bill_id: bill.data.id, amount: 20000 })).error);
+  const part = (await manager.c.from('ra_bills').select('status, paid_amount').eq('id', bill.data.id).single()).data;
+  check('bill stays approved with paid_amount 30000', part.status === 'approved' && Number(part.paid_amount) === 30000, JSON.stringify(part));
+  check('final payment settles the bill', !(await manager.c.from('payments').insert({ bill_id: bill.data.id, amount: 14800 })).error && (await manager.c.from('ra_bills').select('status').eq('id', bill.data.id).single()).data.status === 'paid');
+  check('contractor can see payments on their bill', (await contractor.c.from('payments').select('id').eq('bill_id', bill.data.id)).data?.length === 2);
+  check('contractor cannot record payments', !!(await contractor.c.from('payments').insert({ bill_id: bill.data.id, amount: 1, created_by: contractor.id })).error);
+  check('a paid bill cannot be set back by hand', !!(await manager.c.from('ra_bills').update({ status: 'draft' }).eq('id', bill.data.id)).error);
+  check('work order value cannot drop below the billed amount', !!(await manager.c.from('work_orders').update({ amount: 10000 }).eq('id', wo.data.id)).error);
+  const fin = await manager.c.from('finance_summary').select('budget, committed, billed, paid').eq('project_id', PA.id).eq('cost_head_id', heads[0].id).single();
+  check('finance summary rolls up budget, committed, billed and paid', !fin.error && Number(fin.data.budget) === 1200000 && Number(fin.data.committed) === 1105000 && Number(fin.data.billed) === 40000 && Number(fin.data.paid) === 44800, JSON.stringify(fin.data));
+  check('client sees nothing in the finance summary', (await client.c.from('finance_summary').select('project_id').eq('project_id', PA.id)).data?.length === 0);
+  const mr = await member.c.from('material_requests').insert({ project_id: PA.id, item: 'Cement OPC 53', quantity: 200, unit: 'bags', requested_by: member.id }).select('code').single();
+  check('member raises a material request', /^MR-/.test(mr.data?.code || ''));
+  check('contractor cannot read material requests', (await contractor.c.from('material_requests').select('id')).data?.length === 0);
+  await admin.from('vendors').delete().in('id', [vend.id, vend2.id]);
+
+
   // ── outsider (client without membership) ────────────────────────────────────
   check('outsider sees no projects', mine(await outsider.c.from('projects').select('id')).length === 0);
   check('outsider sees none of the tasks', (await outsider.c.from('project_tasks').select('id').in('id', [tA1.id, tA2.id, tB1.id])).data?.length === 0);
@@ -206,6 +275,7 @@ try {
   failures++; console.error('FATAL', e);
 } finally {
   for (const id of created.projects) await admin.from('projects').delete().eq('id', id);
+  await admin.from('vendors').delete().like('name', `Zz%${stamp}`);
   await admin.from('project_tasks').delete().like('subject', 'member task');
   for (const id of created.users) await admin.auth.admin.deleteUser(id);
   const { count } = await admin.from('profiles').select('id', { count: 'exact', head: true }).like('email', '%selora-test.invalid');

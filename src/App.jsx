@@ -29,6 +29,13 @@ import Users from './modules/projects/Users';
 import Calendar from './modules/projects/Calendar';
 import { SetupProvider } from './context/SetupContext';
 import { SiteProvider } from './context/SiteContext';
+import { FinanceProvider } from './context/FinanceContext';
+import Vendors from './modules/projects/finance/Vendors';
+import WorkOrders from './modules/projects/finance/WorkOrders';
+import RABills from './modules/projects/finance/RABills';
+import Budgets from './modules/projects/finance/Budgets';
+import FinanceDashboard from './modules/projects/finance/FinanceDashboard';
+import MaterialRequests from './modules/projects/finance/MaterialRequests';
 import Approvals from './modules/projects/site/Approvals';
 import Snags from './modules/projects/site/Snags';
 import Gantt from './modules/projects/site/Gantt';
@@ -99,7 +106,9 @@ export default function App() {
                 <SetupProvider>
                   <ProjectsProvider>
                     <SiteProvider>
-                      <AppShell />
+                      <FinanceProvider>
+                        <AppShell />
+                      </FinanceProvider>
                     </SiteProvider>
                   </ProjectsProvider>
                 </SetupProvider>
@@ -129,6 +138,12 @@ export default function App() {
             <Route path="projects/users" element={<InternalOnly><Users /></InternalOnly>} />
             <Route path="projects/daily-report" element={<NoClient><DailyReportList /></NoClient>} />
             <Route path="projects/daily-report/:id" element={<NoClient><DailyReportForm /></NoClient>} />
+            <Route path="projects/finance" element={<InternalOnly><FinanceDashboard /></InternalOnly>} />
+            <Route path="projects/budgets" element={<InternalOnly><Budgets /></InternalOnly>} />
+            <Route path="projects/vendors" element={<InternalOnly><Vendors /></InternalOnly>} />
+            <Route path="projects/material-requests" element={<InternalOnly><MaterialRequests /></InternalOnly>} />
+            <Route path="projects/work-orders" element={<NoClient><WorkOrders /></NoClient>} />
+            <Route path="projects/ra-bills" element={<NoClient><RABills /></NoClient>} />
             <Route path="projects/snags" element={<Snags />} />
             <Route path="projects/approvals" element={<InternalOnly><Approvals /></InternalOnly>} />
             <Route path="projects/gantt" element={<InternalOnly><Gantt /></InternalOnly>} />

@@ -100,6 +100,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed, onOpenNotificatio
         ))}
 
         <SidebarGroup label={isExternal ? 'Portal' : 'ERP'} items={visible(config.erp)} isCollapsed={isCollapsed} />
+        <SidebarGroup label="Finance" items={visible(config.finance)} isCollapsed={isCollapsed} />
         <SidebarGroup label="Setup" items={visible(config.setup)} isCollapsed={isCollapsed} />
         <SidebarGroup label="Reports" items={visible(config.reports)} isCollapsed={isCollapsed} />
 

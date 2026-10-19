@@ -52,7 +52,8 @@ export default function ProjectsSettings() {
   const save = async () => {
     const { company, currency, holiday_list, default_billing_rate, default_costing_rate, limit_timesheet, auto_close_tasks, task_alerts,
       members_see_all, default_project_role, client_can_comment, max_upload_mb, allowed_file_types, audit_retention_days, invite_only,
-      dpr_required, dpr_cutoff_time, approval_warning_days, snag_default_due_days, working_days } = form;
+      dpr_required, dpr_cutoff_time, approval_warning_days, snag_default_due_days, working_days,
+      retention_percent, gst_rate, tds_rate, po_approval_limit, budget_overrun_alert_percent, payment_terms_days, fiscal_year_start_month, ra_bill_prefix } = form;
     const ok = await saveSettings({
       company, currency, holiday_list: holiday_list || null,
       default_billing_rate: Number(default_billing_rate) || 0,
@@ -65,6 +66,14 @@ export default function ProjectsSettings() {
       dpr_required, dpr_cutoff_time: String(dpr_cutoff_time || '18:00').slice(0, 5),
       approval_warning_days: Math.min(365, Math.max(1, Number(approval_warning_days) || 30)),
       snag_default_due_days: Math.min(90, Math.max(1, Number(snag_default_due_days) || 7)),
+      retention_percent: Math.min(100, Math.max(0, Number(retention_percent) || 0)),
+      gst_rate: Math.min(100, Math.max(0, Number(gst_rate) || 0)),
+      tds_rate: Math.min(100, Math.max(0, Number(tds_rate) || 0)),
+      po_approval_limit: Math.max(0, Number(po_approval_limit) || 0),
+      budget_overrun_alert_percent: Math.min(200, Math.max(1, Number(budget_overrun_alert_percent) || 90)),
+      payment_terms_days: Math.min(365, Math.max(0, Number(payment_terms_days) || 0)),
+      fiscal_year_start_month: Math.min(12, Math.max(1, Number(fiscal_year_start_month) || 4)),
+      ra_bill_prefix: String(ra_bill_prefix || 'RA').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 6) || 'RA',
       working_days: String(working_days || '').split(',').filter(Boolean).join(',') || 'Mon,Tue,Wed,Thu,Fri,Sat',
     });
     setStatus(ok ? 'Settings saved.' : '');
@@ -176,6 +185,36 @@ export default function ProjectsSettings() {
                 );
               })}
             </div>
+          </Row>
+        </div>
+
+        <div style={card}>
+          <h2 style={cardTitle}>Finance</h2>
+          <Row title="Retention (%)" hint="Held back from each RA bill (default for new work orders)">
+            <input type="number" min="0" max="100" aria-label="Retention (%)" value={form.retention_percent} disabled={!editable} onChange={(e) => set('retention_percent', e.target.value)} style={{ ...control, width: '100px', textAlign: 'right' }} />
+          </Row>
+          <Row title="GST rate (%)" hint="Added to the gross amount of each RA bill">
+            <input type="number" min="0" max="100" aria-label="GST rate (%)" value={form.gst_rate} disabled={!editable} onChange={(e) => set('gst_rate', e.target.value)} style={{ ...control, width: '100px', textAlign: 'right' }} />
+          </Row>
+          <Row title="TDS rate (%)" hint="Deducted from the gross amount of each RA bill">
+            <input type="number" min="0" max="100" aria-label="TDS rate (%)" value={form.tds_rate} disabled={!editable} onChange={(e) => set('tds_rate', e.target.value)} style={{ ...control, width: '100px', textAlign: 'right' }} />
+          </Row>
+          <Row title="Approval limit (₹)" hint="Work orders and bills above this value need an admin or manager to approve">
+            <input type="number" min="0" max="100000000000" aria-label="Approval limit (₹)" value={form.po_approval_limit} disabled={!editable} onChange={(e) => set('po_approval_limit', e.target.value)} style={{ ...control, width: '160px', textAlign: 'right' }} />
+          </Row>
+          <Row title="Budget warning (%)" hint="Flag a cost head when committed value reaches this share of its budget">
+            <input type="number" min="1" max="200" aria-label="Budget warning (%)" value={form.budget_overrun_alert_percent} disabled={!editable} onChange={(e) => set('budget_overrun_alert_percent', e.target.value)} style={{ ...control, width: '100px', textAlign: 'right' }} />
+          </Row>
+          <Row title="Payment terms (days)" hint="Default due date of a bill, counted from the end of its period">
+            <input type="number" min="0" max="365" aria-label="Payment terms (days)" value={form.payment_terms_days} disabled={!editable} onChange={(e) => set('payment_terms_days', e.target.value)} style={{ ...control, width: '100px', textAlign: 'right' }} />
+          </Row>
+          <Row title="Financial year starts in" hint="Used for the finance dashboard">
+            <select aria-label="Financial year starts in" value={form.fiscal_year_start_month} disabled={!editable} onChange={(e) => set('fiscal_year_start_month', e.target.value)} style={control}>
+              {['January','February','March','April','May','June','July','August','September','October','November','December'].map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
+            </select>
+          </Row>
+          <Row title="RA bill prefix" hint="Letters only, e.g. RA gives RA-0001 (applies to new bills)">
+            <input type="text" aria-label="RA bill prefix" maxLength={6} value={form.ra_bill_prefix} disabled={!editable} onChange={(e) => set('ra_bill_prefix', e.target.value)} style={{ ...control, width: '100px' }} />
           </Row>
         </div>
 

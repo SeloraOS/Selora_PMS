@@ -69,6 +69,14 @@ export const PROJECTS_SIDEBAR_CONFIG = {
       route: '/projects/calendar',
     },
   ],
+  finance: [
+    { key: 'finance', label: 'Finance', icon: 'IndianRupee', route: '/projects/finance', internalOnly: true },
+    { key: 'budgets', label: 'Budgets', icon: 'PiggyBank', route: '/projects/budgets', internalOnly: true },
+    { key: 'workOrders', label: 'Work Orders', icon: 'FileText', route: '/projects/work-orders', noClient: true },
+    { key: 'raBills', label: 'RA Bills', icon: 'Receipt', route: '/projects/ra-bills', noClient: true },
+    { key: 'vendors', label: 'Vendors', icon: 'Store', route: '/projects/vendors', internalOnly: true },
+    { key: 'materialRequests', label: 'Material Requests', icon: 'Package', route: '/projects/material-requests', internalOnly: true },
+  ],
   setup: [
     {
       key: 'activityType',

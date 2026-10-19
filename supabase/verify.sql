@@ -108,5 +108,23 @@ begin
   select count(*) into n from public.pm_settings where approval_warning_days < 1 or snag_default_due_days < 1;
   if n > 0 then raise exception 'invalid site settings'; end if;
 
+  -- phase 3: finance tables secured, audited, realtime; money math consistent
+  select string_agg(t, ', ') into msg from unnest(array['cost_heads','vendors','budgets','budget_revisions','work_orders','ra_bills','payments','material_requests']) t
+   where not exists (select 1 from pg_publication_tables p where p.pubname = 'supabase_realtime' and p.schemaname = 'public' and p.tablename = t);
+  if msg is not null then raise exception 'finance tables missing from realtime: %', msg; end if;
+  select string_agg(t, ', ') into msg from unnest(array['vendors','budgets','work_orders','ra_bills','payments','material_requests']) t
+   where not exists (select 1 from pg_trigger g where g.tgrelid = ('public.' || t)::regclass and g.tgname = 'trg_' || t || '_audit');
+  if msg is not null then raise exception 'missing audit triggers on: %', msg; end if;
+  select count(*) into n from public.ra_bills where net_amount <> gross_amount + gst_amount - retention_amount - tds_amount or paid_amount > net_amount;
+  if n > 0 then raise exception '% bills with inconsistent amounts', n; end if;
+  select count(*) into n from public.ra_bills b where paid_amount <> coalesce((select sum(amount) from public.payments p where p.bill_id = b.id), 0);
+  if n > 0 then raise exception '% bills whose paid_amount differs from their payments', n; end if;
+  select count(*) into n from public.work_orders w where w.amount < coalesce((select sum(gross_amount) from public.ra_bills b where b.work_order_id = w.id and b.status <> 'rejected'), 0);
+  if n > 0 then raise exception '% work orders billed above their value', n; end if;
+  select count(*) into n from public.ra_bills b join public.work_orders w on w.id = b.work_order_id where b.project_id <> w.project_id or b.vendor_id <> w.vendor_id;
+  if n > 0 then raise exception 'bills whose project or vendor differs from their work order'; end if;
+  select count(*) into n from pg_policies where schemaname = 'public' and tablename in ('vendors','budgets','work_orders','ra_bills','payments','material_requests','cost_heads') and roles::text like '%anon%';
+  if n > 0 then raise exception 'finance policies must not apply to anon'; end if;
+
   raise notice 'verify.sql: all checks passed';
 end $$;
