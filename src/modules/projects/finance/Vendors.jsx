@@ -22,13 +22,13 @@ export default function Vendors() {
       searchText={(r) => `${r.code} ${r.name} ${r.category || ''} ${r.gstin || ''} ${r.contact_name || ''}`}
       filters={[{ key: 'active', label: 'Status', options: ['Active', 'Inactive'], get: (r) => (r.is_active ? 'Active' : 'Inactive') }]}
       columns={[
-        { key: 'code', label: 'ID' },
+        { key: 'code', label: 'ID', sortType: 'code' },
         { key: 'name', label: 'Vendor' },
         { key: 'category', label: 'Category' },
         { key: 'gstin', label: 'GSTIN' },
-        { key: 'contact', label: 'Contact', render: (r) => [r.contact_name, r.phone].filter(Boolean).join(' · ') || '—' },
-        { key: 'orders', label: 'Work orders', render: orders },
-        { key: 'status', label: 'Status', render: (r) => <Pill color={r.is_active ? 'green' : 'gray'}>{r.is_active ? 'Active' : 'Inactive'}</Pill> },
+        { key: 'contact', label: 'Contact', sortValue: (r) => r.contact_name, render: (r) => [r.contact_name, r.phone].filter(Boolean).join(' · ') || '—' },
+        { key: 'orders', label: 'Work orders', sortType: 'number', sortValue: orders, render: orders },
+        { key: 'status', label: 'Status', sortValue: (r) => (r.is_active ? 'Active' : 'Inactive'), render: (r) => <Pill color={r.is_active ? 'green' : 'gray'}>{r.is_active ? 'Active' : 'Inactive'}</Pill> },
       ]}
       fields={[
         { name: 'name', label: 'Vendor name', required: true },

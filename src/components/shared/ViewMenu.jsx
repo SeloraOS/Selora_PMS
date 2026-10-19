@@ -24,30 +24,35 @@ function useDropdown() {
  *  - a "List View / Kanban View" dropdown
  *  - in kanban view, a pipeline picker next to it (the pipeline is the field the board is grouped by)
  */
-export default function ViewMenu({ view, setView, pipelines, pipeline, setPipeline }) {
-  const views = useDropdown();
+export default function ViewMenu({ view, setView, pipelines, pipeline, setPipeline, views }) {
+  const views_ = useDropdown();
   const pipes = useDropdown();
+  const list = views || [{ id: 'list', label: 'List View', icon: List }, { id: 'kanban', label: 'Kanban View', icon: LayoutGrid }];
+
+  // pages without a board are list-only: a plain label, no menu
+  if (!views && (!pipelines || !pipelines.length)) {
+    return <span style={{ ...button, cursor: 'default', color: 'var(--text-color, #1a1a1a)', fontWeight: 500 }}><List size={14} /> List View</span>;
+  }
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-      <div ref={views.ref} style={{ position: 'relative' }}>
-        <button type="button" aria-haspopup="menu" aria-expanded={views.open} onClick={() => views.setOpen(!views.open)} style={{ ...button, color: 'var(--text-color, #1a1a1a)', fontWeight: 500 }}>
-          {view === 'kanban' ? <LayoutGrid size={14} /> : <List size={14} />} {view === 'kanban' ? 'Kanban View' : 'List View'}
+      <div ref={views_.ref} style={{ position: 'relative' }}>
+        <button type="button" aria-haspopup="menu" aria-expanded={views_.open} onClick={() => views_.setOpen(!views_.open)} style={{ ...button, color: 'var(--text-color, #1a1a1a)', fontWeight: 500 }}>
+          {(() => { const cur = list.find((v) => v.id === view) || list[0]; const Icon = cur.icon; return <><Icon size={14} /> {cur.label}</>; })()}
           <ChevronDown size={14} style={{ color: 'var(--text-muted, #9ca3af)' }} />
         </button>
-        {views.open && (
+        {views_.open && (
           <div role="menu" style={menu}>
-            <button type="button" role="menuitem" style={item(view === 'list')} onClick={() => { setView('list'); views.setOpen(false); }}>
-              <List size={14} /> List View {view === 'list' && <Check size={14} style={{ marginLeft: 'auto' }} />}
-            </button>
-            <button type="button" role="menuitem" style={item(view === 'kanban')} onClick={() => { setView('kanban'); views.setOpen(false); }}>
-              <LayoutGrid size={14} /> Kanban View {view === 'kanban' && <Check size={14} style={{ marginLeft: 'auto' }} />}
-            </button>
+            {list.map((v) => (
+              <button key={v.id} type="button" role="menuitem" style={item(view === v.id)} onClick={() => { setView(v.id); views_.setOpen(false); }}>
+                <v.icon size={14} /> {v.label} {view === v.id && <Check size={14} style={{ marginLeft: 'auto' }} />}
+              </button>
+            ))}
           </div>
         )}
       </div>
 
-      {view === 'kanban' ? (
+      {view === 'kanban' && pipelines && pipelines.length ? (
         <div ref={pipes.ref} style={{ position: 'relative' }}>
           <button type="button" aria-haspopup="dialog" aria-expanded={pipes.open} aria-label="Select pipeline" onClick={() => pipes.setOpen(!pipes.open)} style={{ ...button, color: 'var(--text-color, #1a1a1a)' }}>
             <Rows3 size={14} /> Pipeline: <strong style={{ fontWeight: 600 }}>{pipeline.label}</strong>

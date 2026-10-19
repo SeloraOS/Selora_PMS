@@ -4,6 +4,8 @@ import { useSetup } from '../../../context/SetupContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useProjects } from '../../../context/ProjectsContext';
 import { can } from '../../../lib/permissions';
+import { useRowCtx } from '../../../lib/useRowCtx';
+import { UpdateCard } from '../rowCards';
 
 const TYPES = ['Progress', 'Milestone', 'Issue', 'Other'];
 const fmt = (d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-GB') : '—');
@@ -12,6 +14,7 @@ export default function ProjectUpdate() {
   const { updates, loaded, save, remove } = useSetup();
   const { projects } = useProjects();
   const { profile, user } = useAuth();
+  const ctx = useRowCtx();
   const project = (r) => r.projects?.project_name || '—';
 
   return (
@@ -20,14 +23,19 @@ export default function ProjectUpdate() {
       rows={updates}
       loading={!loaded}
       canEdit // anyone signed in can post updates
+      entity="projectUpdate"
+      ctx={ctx}
+      defaultSort={{ key: 'update_date', order: 'desc' }}
+      card={(r) => <UpdateCard update={r} ctx={ctx} />}
+      onMove={(r, patch) => save('project_updates', patch, r.id)}
       canDelete={(r) => can(profile, 'delete', { createdBy: r.created_by }) || r.created_by === user?.id}
       searchText={(r) => `${project(r)} ${r.description || ''} ${r.sent_to || ''}`}
       filters={[{ key: 'type', label: 'Type', options: TYPES, get: (r) => r.type }]}
       columns={[
-        { key: 'project', label: 'Project', render: project },
+        { key: 'project', label: 'Project', render: project, sortValue: project },
         { key: 'type', label: 'Type' },
         { key: 'description', label: 'Update' },
-        { key: 'update_date', label: 'Date', render: (r) => fmt(r.update_date) },
+        { key: 'update_date', label: 'Date', sortType: 'date', render: (r) => fmt(r.update_date) },
         { key: 'sent_to', label: 'Sent To' },
         { key: 'visibility', label: 'Visible to', render: (r) => (r.visibility === 'shared' ? 'Clients & contractors' : 'Internal only') },
       ]}

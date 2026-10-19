@@ -82,3 +82,26 @@ export function workingDays(from, to, working = new Set(['Mon', 'Tue', 'Wed', 'T
   }
   return n;
 }
+
+/** Pixels per day for each zoom level. */
+export const ZOOM_PX = { day: 32, week: 16, month: 6 };
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/**
+ * Header for a timeline: `months` = [{ label, offset, span }] (offset/span in days from `from`),
+ * `marks` = [{ date, label, offset }] — every day (day zoom), every Monday (week zoom) or none (month zoom).
+ */
+export function ticks(from, to, zoom = 'week') {
+  const total = daysBetween(from, to) + 1;
+  const months = [];
+  const marks = [];
+  for (let i = 0; i < total; i++) {
+    const d = addDays(from, i);
+    const first = d.slice(8) === '01' || i === 0;
+    if (first) months.push({ label: `${MONTHS[Number(d.slice(5, 7)) - 1]} ${d.slice(0, 4)}`, offset: i, span: 0 });
+    months[months.length - 1].span += 1;
+    const monday = new Date(`${d}T00:00:00Z`).getUTCDay() === 1;
+    if (zoom === 'day' || (zoom === 'week' && monday)) marks.push({ date: d, label: d.slice(8), offset: i });
+  }
+  return { months, marks };
+}

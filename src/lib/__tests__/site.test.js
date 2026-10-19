@@ -59,3 +59,15 @@ describe('site helpers', () => {
     expect(totalManpower([{ head_count: 3 }, { head_count: '4' }])).toBe(7);
   });
 });
+
+import { ticks, ZOOM_PX } from '../gantt';
+describe('gantt ticks', () => {
+  it('splits the range into months and marks by zoom', () => {
+    const t = ticks('2026-01-29', '2026-02-10', 'week');
+    expect(t.months.map((m) => [m.label, m.offset, m.span])).toEqual([['Jan 2026', 0, 3], ['Feb 2026', 3, 10]]);
+    expect(t.marks.map((m) => m.date)).toEqual(['2026-02-02', '2026-02-09']); // Mondays
+    expect(ticks('2026-01-29', '2026-02-01', 'day').marks).toHaveLength(4);
+    expect(ticks('2026-01-29', '2026-02-10', 'month').marks).toEqual([]);
+    expect(ZOOM_PX.day).toBeGreaterThan(ZOOM_PX.week);
+  });
+});

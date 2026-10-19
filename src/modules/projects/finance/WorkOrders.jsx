@@ -8,6 +8,8 @@ import { formatINR } from '../../../lib/reportData';
 import { WO_STATUS_LABELS } from '../../../lib/finance';
 import { FilesPanel } from '../../../components/shared/RecordPanels';
 import { fmtDate, Pill, WO_COLOR } from './shared';
+import { useRowCtx } from '../../../lib/useRowCtx';
+import { WorkOrderCard } from '../rowCards';
 
 export default function WorkOrders() {
   const { workOrders, bills, vendors, costHeads, loaded, save, remove } = useFinance();
@@ -18,6 +20,7 @@ export default function WorkOrders() {
   const vname = (r) => vendors.find((v) => v.id === r.vendor_id)?.name || '—';
   const billed = (r) => bills.filter((b) => b.work_order_id === r.id && b.status !== 'rejected').reduce((n, b) => n + Number(b.gross_amount), 0);
   const limit = Number(settings?.po_approval_limit) || 0;
+  const ctx = useRowCtx();
 
   return (
     <SetupListPage
@@ -25,18 +28,24 @@ export default function WorkOrders() {
       rows={workOrders}
       loading={!loaded}
       canEdit={isInternal}
+      entity="workOrder"
+      ctx={ctx}
+      defaultSort={{ key: 'code', order: 'desc' }}
+      card={(r) => <WorkOrderCard order={r} ctx={ctx} billed={billed(r)} />}
+      onMove={(r, patch) => save('work_orders', patch, r.id)}
       canDelete={(r) => isStaff || (r.created_by === user?.id && r.status === 'draft')}
       searchText={(r) => `${r.code} ${r.title} ${pname(r)} ${vname(r)}`}
       filters={[{ key: 'status', label: 'Status', options: Object.keys(WO_STATUS_LABELS), get: (r) => r.status }]}
       columns={[
-        { key: 'code', label: 'ID' },
+        { key: 'code', label: 'ID', sortType: 'code' },
         { key: 'title', label: 'Work order' },
-        { key: 'project', label: 'Project', render: pname },
-        { key: 'vendor', label: 'Vendor', render: vname },
-        { key: 'amount', label: 'Value', render: (r) => formatINR(Number(r.amount)) },
-        { key: 'billed', label: 'Billed', render: (r) => formatINR(billed(r)) },
-        { key: 'status', label: 'Status', render: (r) => <Pill color={WO_COLOR[r.status]}>{WO_STATUS_LABELS[r.status]}</Pill> },
-        { key: 'end', label: 'Ends', render: (r) => fmtDate(r.end_date) },
+        { key: 'project', label: 'Project', render: pname, sortValue: pname },
+        { key: 'vendor', label: 'Vendor', render: vname, sortValue: vname },
+        { key: 'amount', label: 'Value', sortType: 'number', align: 'right', render: (r) => formatINR(Number(r.amount)) },
+        { key: 'billed', label: 'Billed', sortType: 'number', sortValue: billed, render: (r) => formatINR(billed(r)) },
+        { key: 'status', label: 'Status', sortType: 'rank', rank: Object.keys(WO_STATUS_LABELS), render: (r) => <Pill color={WO_COLOR[r.status]}>{WO_STATUS_LABELS[r.status]}</Pill> },
+        { key: 'start_date', label: 'Starts', sortType: 'date', defaultVisible: false, render: (r) => fmtDate(r.start_date) },
+        { key: 'end', label: 'Ends', sortType: 'date', sortValue: (r) => r.end_date, render: (r) => fmtDate(r.end_date) },
       ]}
       fields={[
         { name: 'project_id', label: 'Project', type: 'select', required: true, options: projects.map((p) => ({ value: p.dbId, label: p.projectName })) },

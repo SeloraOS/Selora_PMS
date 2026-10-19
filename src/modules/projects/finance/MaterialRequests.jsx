@@ -4,6 +4,8 @@ import { useFinance } from '../../../context/FinanceContext';
 import { useProjects } from '../../../context/ProjectsContext';
 import { useAuth } from '../../../context/AuthContext';
 import { fmtDate, Pill } from './shared';
+import { useRowCtx } from '../../../lib/useRowCtx';
+import { MaterialCard } from '../rowCards';
 
 const STATUSES = ['requested', 'approved', 'ordered', 'delivered', 'rejected'];
 const COLOR = { requested: 'amber', approved: 'blue', ordered: 'blue', delivered: 'green', rejected: 'red' };
@@ -12,6 +14,7 @@ export default function MaterialRequests() {
   const { materialRequests, loaded, save, remove } = useFinance();
   const { projects } = useProjects();
   const { user, isStaff } = useAuth();
+  const ctx = useRowCtx();
   const pname = (r) => projects.find((p) => p.dbId === r.project_id)?.projectName || '—';
   return (
     <SetupListPage
@@ -19,16 +22,21 @@ export default function MaterialRequests() {
       rows={materialRequests}
       loading={!loaded}
       canEdit
+      entity="materialRequest"
+      ctx={ctx}
+      defaultSort={{ key: 'code', order: 'desc' }}
+      card={(r) => <MaterialCard request={r} ctx={ctx} />}
+      onMove={(r, patch) => save('material_requests', patch, r.id)}
       canDelete={(r) => isStaff || r.requested_by === user?.id}
       searchText={(r) => `${r.code} ${r.item} ${pname(r)}`}
       filters={[{ key: 'status', label: 'Status', options: STATUSES, get: (r) => r.status }]}
       columns={[
-        { key: 'code', label: 'ID' },
+        { key: 'code', label: 'ID', sortType: 'code' },
         { key: 'item', label: 'Item' },
-        { key: 'project', label: 'Project', render: pname },
-        { key: 'qty', label: 'Quantity', render: (r) => `${Number(r.quantity)} ${r.unit}` },
-        { key: 'needed_by', label: 'Needed by', render: (r) => fmtDate(r.needed_by) },
-        { key: 'status', label: 'Status', render: (r) => <Pill color={COLOR[r.status]}>{r.status}</Pill> },
+        { key: 'project', label: 'Project', render: pname, sortValue: pname },
+        { key: 'quantity', label: 'Quantity', sortType: 'number', render: (r) => `${Number(r.quantity)} ${r.unit}` },
+        { key: 'needed_by', label: 'Needed by', sortType: 'date', render: (r) => fmtDate(r.needed_by) },
+        { key: 'status', label: 'Status', sortType: 'rank', rank: STATUSES, render: (r) => <Pill color={COLOR[r.status]}>{r.status}</Pill> },
       ]}
       fields={[
         { name: 'project_id', label: 'Project', type: 'select', required: true, options: projects.map((p) => ({ value: p.dbId, label: p.projectName })) },

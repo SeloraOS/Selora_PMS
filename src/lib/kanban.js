@@ -3,6 +3,8 @@
  * A pipeline provides its columns, how to read an item's column, and the update a drop applies.
  * Values match the database CHECK constraints (0011_integrity.sql) for status/priority.
  */
+import { approvalState } from './site.js';
+
 export const NONE = '__none'; // column for items without a value
 
 const PROJECT_COLUMNS = [
@@ -65,6 +67,53 @@ export const PIPELINES = {
     { id: 'customer', label: 'Customer', field: 'customer', columns: (items) => distinct(items, (t) => t.customer), column: column((t) => t.customer), patch: (c) => ({ customer: value(c) }) },
   ],
 };
+
+
+// ── DB-row entities (snags, approvals, finance, ...). Their pipelines read ctx too (project/vendor names, today). ──
+const col = (id, label, color) => ({ id, label, color });
+const SNAG_STATUS = [col('Open', 'Open', '#f59e0b'), col('Fixed', 'Fixed', '#3b82f6'), col('Verified', 'Verified', '#22c55e'), col('Rejected', 'Rejected', '#9ca3af')];
+const SEVERITY = [col('Low', 'Low', '#6b7280'), col('Medium', 'Medium', '#3b82f6'), col('High', 'High', '#f59e0b'), col('Critical', 'Critical', '#ef4444')];
+const APPROVAL_STATUS = [col('Not started', 'Not started', '#9ca3af'), col('Applied', 'Applied', '#3b82f6'), col('Approved', 'Approved', '#22c55e'), col('Rejected', 'Rejected', '#ef4444')];
+const VALIDITY = [col('valid', 'Valid', '#22c55e'), col('expiring', 'Expiring soon', '#f59e0b'), col('expired', 'Expired', '#ef4444'), col('pending', 'Not approved yet', '#3b82f6'), col('rejected', 'Rejected', '#9ca3af')];
+const WO_STATUS = [col('draft', 'Draft', '#9ca3af'), col('pending_approval', 'Pending approval', '#f59e0b'), col('approved', 'Approved', '#22c55e'), col('closed', 'Closed', '#3b82f6'), col('cancelled', 'Cancelled', '#ef4444')];
+const BILL_STATUS = [col('draft', 'Draft', '#9ca3af'), col('submitted', 'Submitted', '#f59e0b'), col('approved', 'Approved', '#3b82f6'), col('paid', 'Paid', '#22c55e'), col('rejected', 'Rejected', '#ef4444')];
+const MR_STATUS = [col('requested', 'Requested', '#f59e0b'), col('approved', 'Approved', '#3b82f6'), col('ordered', 'Ordered', '#8b5cf6'), col('delivered', 'Delivered', '#22c55e'), col('rejected', 'Rejected', '#ef4444')];
+const DPR_STATUS = [col('draft', 'Draft', '#f59e0b'), col('submitted', 'Submitted', '#22c55e')];
+const UPDATE_TYPE = [col('Progress', 'Progress', '#3b82f6'), col('Milestone', 'Milestone', '#22c55e'), col('Issue', 'Issue', '#ef4444'), col('Other', 'Other', '#9ca3af')];
+const HEALTH = [col('ok', 'On track', '#22c55e'), col('warn', 'Near limit', '#f59e0b'), col('over', 'Over budget', '#ef4444'), col('unbudgeted', 'No budget', '#9ca3af'), col('none', 'Nothing yet', '#6b7280')];
+
+const field = (id, label, columns, key) => ({ id, label, field: key, columns: fixed(columns), column: (r) => r[key], patch: (c) => ({ [key]: c }) });
+const byName = (id, label, namesOf, read) => ({ id, label, readOnly: true, columns: (_items, ctx) => named(namesOf(ctx)), column: (r, ctx) => read(r, ctx) || NONE, patch: () => ({}) });
+const projectPipe = byName('project', 'Project', (ctx) => ctx.projects.map((p) => p.projectName), (r, ctx) => ctx.projectName?.(r.project_id));
+const vendorPipe = byName('vendor', 'Vendor', (ctx) => (ctx.vendors || []).map((v) => v.name), (r, ctx) => ctx.vendorName?.(r.vendor_id));
+
+Object.assign(PIPELINES, {
+  snag: [
+    field('status', 'Status', SNAG_STATUS, 'status'),
+    field('severity', 'Severity', SEVERITY, 'severity'),
+    { id: 'category', label: 'Category', field: 'category', columns: (_i, ctx) => named((ctx.categories || []).map((c) => c.name)), column: column((r) => r.category), patch: (c) => ({ category: value(c) }) },
+    projectPipe,
+  ],
+  approval: [
+    field('status', 'Status', APPROVAL_STATUS, 'status'),
+    { id: 'validity', label: 'Validity', readOnly: true, columns: fixed(VALIDITY), column: (r, ctx) => approvalState(r, ctx.today, ctx.warnDays).key, patch: () => ({}) },
+    projectPipe,
+  ],
+  workOrder: [
+    field('status', 'Status', WO_STATUS, 'status'),
+    vendorPipe,
+    byName('costHead', 'Cost head', (ctx) => (ctx.costHeads || []).map((c) => c.name), (r, ctx) => ctx.headName?.(r.cost_head_id)),
+    projectPipe,
+  ],
+  raBill: [field('status', 'Status', BILL_STATUS, 'status'), vendorPipe, projectPipe],
+  materialRequest: [field('status', 'Status', MR_STATUS, 'status'), projectPipe],
+  dailyReport: [field('status', 'Status', DPR_STATUS, 'status'), projectPipe],
+  projectUpdate: [field('type', 'Type', UPDATE_TYPE, 'type'), projectPipe],
+  budget: [
+    { id: 'health', label: 'Budget health', readOnly: true, columns: fixed(HEALTH), column: (r) => r.health.key, patch: () => ({}) },
+    byName('costHead', 'Cost head', (ctx) => (ctx.costHeads || []).map((c) => c.name), (r) => r.head.name),
+  ],
+});
 
 export const pipelineById = (entity, id) => PIPELINES[entity].find((p) => p.id === id) || PIPELINES[entity][0];
 

@@ -10,15 +10,16 @@ const write = (key, v) => { try { localStorage.setItem(key, v); } catch { /* sto
  *   pipeline the field the board is grouped by (see PIPELINES in lib/kanban.js)
  */
 export function useViewMode(entity) {
-  const [view, setViewState] = useState(() => (read(`selora-view:${entity}`) === 'kanban' ? 'kanban' : 'list'));
-  const [pipelineId, setPipelineState] = useState(() => pipelineById(entity, read(`selora-pipeline:${entity}`)).id);
+  const pipelines = PIPELINES[entity] || []; // pages without pipelines are list-only
+  const [view, setViewState] = useState(() => (pipelines.length && read(`selora-view:${entity}`) === 'kanban' ? 'kanban' : 'list'));
+  const [pipelineId, setPipelineState] = useState(() => (pipelines.length ? pipelineById(entity, read(`selora-pipeline:${entity}`)).id : null));
 
   const setView = useCallback((v) => { setViewState(v); write(`selora-view:${entity}`, v); }, [entity]);
   const setPipeline = useCallback((id) => {
-    if (!PIPELINES[entity].some((p) => p.id === id)) return;
+    if (!(PIPELINES[entity] || []).some((p) => p.id === id)) return;
     setPipelineState(id);
     write(`selora-pipeline:${entity}`, id);
   }, [entity]);
 
-  return { view, setView, pipeline: pipelineById(entity, pipelineId), setPipeline, pipelines: PIPELINES[entity] };
+  return { view: pipelines.length ? view : 'list', setView, pipeline: pipelines.length ? pipelineById(entity, pipelineId) : null, setPipeline, pipelines };
 }

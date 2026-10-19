@@ -7,6 +7,8 @@ import { useProjects } from '../../../context/ProjectsContext';
 import { SEVERITIES, SNAG_STATUSES, snagOverdue, dueDateFor } from '../../../lib/site';
 import { todayStr } from '../../../lib/reportData';
 import { FilesPanel } from '../../../components/shared/RecordPanels';
+import { useRowCtx } from '../../../lib/useRowCtx';
+import { SnagCard } from '../rowCards';
 
 const fmt = (d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-GB') : '—');
 const SEV = { Low: ['var(--st-blue-bg)', 'var(--st-blue-fg)'], Medium: ['var(--st-amber-bg)', 'var(--st-amber-fg)'], High: ['var(--st-red-bg)', 'var(--st-red-fg)'], Critical: ['var(--st-red-bg)', 'var(--st-red-fg)'] };
@@ -19,6 +21,7 @@ export default function Snags() {
   const { projects } = useProjects();
   const { user, isStaff, isInternal, role } = useAuth();
   const today = todayStr();
+  const ctx = useRowCtx();
   const pname = (r) => projects.find((p) => p.dbId === r.project_id)?.projectName || '—';
   const who = (id) => profiles.find((p) => p.id === id)?.full_name || profiles.find((p) => p.id === id)?.email || '';
   const contractor = role === 'contractor';
@@ -33,6 +36,12 @@ export default function Snags() {
       loading={!loaded}
       canEdit={canEdit}
       canCreate
+      entity="snag"
+      ctx={ctx}
+      defaultSort={{ key: 'code', order: 'desc' }}
+      card={(r) => <SnagCard snag={r} ctx={ctx} />}
+      canMove={(r) => !contractor || r.assignee_id === user?.id}
+      onMove={(r, patch) => (contractor && patch.status === undefined ? null : save('snags', contractor ? { status: patch.status } : patch, r.id))}
       canDelete={(r) => isStaff || (isInternal && r.reported_by === user?.id)}
       fieldDisabled={(f, row) => contractor && !!row && f.name !== 'status'}
       searchText={(r) => `${r.code} ${r.title} ${r.location || ''} ${pname(r)}`}
@@ -41,14 +50,16 @@ export default function Snags() {
         { key: 'severity', label: 'Severity', options: SEVERITIES, get: (r) => r.severity },
       ]}
       columns={[
-        { key: 'code', label: 'ID' },
+        { key: 'code', label: 'ID', sortType: 'code' },
         { key: 'title', label: 'Snag' },
-        { key: 'project', label: 'Project', render: pname },
+        { key: 'project', label: 'Project', render: pname, sortValue: pname },
         { key: 'location', label: 'Location' },
-        { key: 'severity', label: 'Severity', render: (r) => <Pill map={SEV} value={r.severity} /> },
-        { key: 'status', label: 'Status', render: (r) => <Pill map={STATUS} value={r.status} /> },
-        { key: 'due', label: 'Due', render: (r) => <span style={{ color: snagOverdue(r, today) ? 'var(--st-red-fg)' : undefined, fontWeight: snagOverdue(r, today) ? 600 : 400 }}>{fmt(r.due_date)}</span> },
-        { key: 'assignee', label: 'Assigned to', render: (r) => who(r.assignee_id) || '—' },
+        { key: 'severity', label: 'Severity', sortType: 'rank', rank: SEVERITIES, render: (r) => <Pill map={SEV} value={r.severity} /> },
+        { key: 'status', label: 'Status', sortType: 'rank', rank: SNAG_STATUSES, render: (r) => <Pill map={STATUS} value={r.status} /> },
+        { key: 'due', label: 'Due', sortType: 'date', sortValue: (r) => r.due_date, render: (r) => <span style={{ color: snagOverdue(r, today) ? 'var(--st-red-fg)' : undefined, fontWeight: snagOverdue(r, today) ? 600 : 400 }}>{fmt(r.due_date)}</span> },
+        { key: 'assignee', label: 'Assigned to', sortValue: (r) => who(r.assignee_id), render: (r) => who(r.assignee_id) || '—' },
+        { key: 'category', label: 'Category', defaultVisible: false },
+        { key: 'created_at', label: 'Created', sortType: 'date', defaultVisible: false, render: (r) => fmt(r.created_at?.slice(0, 10)) },
       ]}
       fields={[
         { name: 'project_id', label: 'Project', type: 'select', required: true, options: projects.map((p) => ({ value: p.dbId, label: p.projectName })) },

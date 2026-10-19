@@ -9,6 +9,8 @@ import { BILL_STATUS_LABELS } from '../../../lib/finance';
 import { FilesPanel } from '../../../components/shared/RecordPanels';
 import { brandedDocument, printDocument, raBillHtml } from '../../../lib/exportRows';
 import { control, fmtDate, Pill, BILL_COLOR } from './shared';
+import { useRowCtx } from '../../../lib/useRowCtx';
+import { BillCard } from '../rowCards';
 
 const line = { display: 'flex', justifyContent: 'space-between', fontSize: '13px', padding: '3px 0' };
 
@@ -75,6 +77,7 @@ export default function RABills() {
   const wo = (id) => workOrders.find((w) => w.id === id);
   const billable = workOrders.filter((w) => w.status === 'approved');
   const limit = Number(settings?.po_approval_limit) || 0;
+  const ctx = useRowCtx();
 
   const statusOptions = (contractor ? ['draft', 'submitted'] : Object.keys(BILL_STATUS_LABELS)).map((value) => ({ value, label: BILL_STATUS_LABELS[value] }));
   const locked = (row) => (contractor ? row.status !== 'draft' : ['approved', 'paid', 'rejected'].includes(row.status));
@@ -86,6 +89,12 @@ export default function RABills() {
       loading={!loaded}
       canEdit
       canCreate={isInternal || contractor}
+      entity="raBill"
+      ctx={ctx}
+      defaultSort={{ key: 'code', order: 'desc' }}
+      card={(r) => <BillCard bill={r} ctx={ctx} />}
+      canMove={(r) => (contractor ? r.status === 'draft' : !['paid', 'rejected'].includes(r.status))}
+      onMove={(r, patch) => save('ra_bills', patch, r.id)}
       canDelete={(r) => isStaff || (r.status === 'draft' && r.created_by === user?.id)}
       fieldDisabled={(f, row) => !!row && (
         f.name === 'work_order_id'
@@ -94,15 +103,15 @@ export default function RABills() {
       searchText={(r) => `${r.code} ${pname(r)} ${vname(r)} ${wo(r.work_order_id)?.code || ''}`}
       filters={[{ key: 'status', label: 'Status', options: Object.keys(BILL_STATUS_LABELS), get: (r) => r.status }]}
       columns={[
-        { key: 'code', label: 'Bill' },
-        { key: 'wo', label: 'Work order', render: (r) => wo(r.work_order_id)?.code || '—' },
-        { key: 'project', label: 'Project', render: pname },
-        { key: 'vendor', label: 'Vendor', render: vname },
-        { key: 'gross', label: 'Gross', render: (r) => formatINR(Number(r.gross_amount)) },
-        { key: 'net', label: 'Net', render: (r) => formatINR(Number(r.net_amount)) },
-        { key: 'paid', label: 'Paid', render: (r) => formatINR(Number(r.paid_amount)) },
-        { key: 'due', label: 'Due', render: (r) => fmtDate(r.due_date) },
-        { key: 'status', label: 'Status', render: (r) => <Pill color={BILL_COLOR[r.status]}>{BILL_STATUS_LABELS[r.status]}</Pill> },
+        { key: 'code', label: 'Bill', sortType: 'code' },
+        { key: 'wo', label: 'Work order', sortValue: (r) => wo(r.work_order_id)?.code, render: (r) => wo(r.work_order_id)?.code || '—' },
+        { key: 'project', label: 'Project', render: pname, sortValue: pname },
+        { key: 'vendor', label: 'Vendor', render: vname, sortValue: vname },
+        { key: 'gross_amount', label: 'Gross', sortType: 'number', align: 'right', render: (r) => formatINR(Number(r.gross_amount)) },
+        { key: 'net_amount', label: 'Net', sortType: 'number', align: 'right', render: (r) => formatINR(Number(r.net_amount)) },
+        { key: 'paid_amount', label: 'Paid', sortType: 'number', align: 'right', render: (r) => formatINR(Number(r.paid_amount)) },
+        { key: 'due_date', label: 'Due', sortType: 'date', render: (r) => fmtDate(r.due_date) },
+        { key: 'status', label: 'Status', sortType: 'rank', rank: Object.keys(BILL_STATUS_LABELS), render: (r) => <Pill color={BILL_COLOR[r.status]}>{BILL_STATUS_LABELS[r.status]}</Pill> },
       ]}
       fields={[
         { name: 'work_order_id', label: 'Work order', type: 'select', required: true, options: [...billable, ...workOrders.filter((w) => w.status !== 'approved' && bills.some((b) => b.work_order_id === w.id))].map((w) => ({ value: w.id, label: `${w.code} · ${w.title} (${formatINR(Number(w.amount))})` })) },

@@ -7,6 +7,8 @@ import { useProjects } from '../../../context/ProjectsContext';
 import { can } from '../../../lib/permissions';
 import { approvalState, APPROVAL_STATUSES } from '../../../lib/site';
 import { todayStr } from '../../../lib/reportData';
+import { useRowCtx } from '../../../lib/useRowCtx';
+import { ApprovalCard } from '../rowCards';
 
 const fmt = (d) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString('en-GB') : '—');
 const COLORS = {
@@ -28,6 +30,7 @@ export default function Approvals() {
   const { profile } = useAuth();
   const [stdProject, setStdProject] = useState('');
   const today = todayStr();
+  const ctx = useRowCtx();
   const warn = settings?.approval_warning_days ?? 30;
   const pname = (r) => projects.find((p) => p.dbId === r.project_id)?.projectName || '—';
   const editable = can(profile, 'createRecords');
@@ -51,17 +54,23 @@ export default function Approvals() {
       rows={approvals}
       loading={!loaded}
       canEdit={editable}
+      entity="approval"
+      ctx={ctx}
+      defaultSort={{ key: 'expiry_on', order: 'asc' }}
+      card={(r) => <ApprovalCard approval={r} ctx={ctx} />}
+      onMove={(r, patch) => save('approvals', patch, r.id)}
       canDelete={() => can(profile, 'editSetup')}
       extraActions={extra}
       searchText={(r) => `${r.name} ${r.authority || ''} ${r.reference_no || ''} ${pname(r)}`}
       filters={[{ key: 'status', label: 'Status', options: APPROVAL_STATUSES, get: (r) => r.status }]}
       columns={[
         { key: 'name', label: 'Approval' },
-        { key: 'project', label: 'Project', render: pname },
+        { key: 'project', label: 'Project', render: pname, sortValue: pname },
         { key: 'authority', label: 'Authority' },
+        { key: 'reference_no', label: 'Reference', defaultVisible: false },
         { key: 'status', label: 'Status' },
-        { key: 'expiry_on', label: 'Expiry', render: (r) => fmt(r.expiry_on) },
-        { key: 'state', label: 'Validity', render: (r) => <ApprovalBadge approval={r} today={today} warnDays={warn} /> },
+        { key: 'expiry_on', label: 'Expiry', sortType: 'date', render: (r) => fmt(r.expiry_on) },
+        { key: 'state', label: 'Validity', sortType: 'number', sortValue: (r) => ({ expired: 0, expiring: 1, pending: 2, valid: 3, rejected: 4 }[approvalState(r, today, warn).key]), render: (r) => <ApprovalBadge approval={r} today={today} warnDays={warn} /> },
       ]}
       fields={[
         { name: 'project_id', label: 'Project', type: 'select', required: true, options: projects.map((p) => ({ value: p.dbId, label: p.projectName })) },

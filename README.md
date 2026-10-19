@@ -96,6 +96,10 @@ Server setup for notifications (secrets are Edge Function environment variables,
 
 Verified here against fake servers: SMTP over a plain connection with AUTH LOGIN, the WhatsApp webhook, once-a-day delivery, the dry-run path and the "not configured" path. Not verified: TLS/STARTTLS against a real mail server, a real WhatsApp provider, real Tally import.
 
+## List toolbar everywhere
+
+Every list page has the same toolbar: List View / Kanban View (with a pipeline picker), Filter, Sort, Columns n/m and Export. Choices are remembered per page. Kanban pipelines: snags (status, severity, category, project), approvals (status, validity), work orders, RA bills, material requests, daily reports, project updates, budgets (health). Project/vendor/validity pipelines are read-only; status-type pipelines are draggable and the database rules still apply. Budgets shows summary cards, a progress bar per cost head, an explicit Set/Edit budget dialog with a reason and a History view; the Gantt opens on one project at a time (collapsible groups for All projects) with Day/Week/Month zoom, hide-completed, critical-only and baseline toggles.
+
 ## Tests and verification
 
     npm test          # unit tests: report aggregation, rates, field mappers
