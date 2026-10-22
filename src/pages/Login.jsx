@@ -16,14 +16,16 @@ const inputStyle = {
   outline: 'none',
 };
 
+// Optional one-click demo: set VITE_DEMO_EMAIL and VITE_DEMO_PASSWORD at build time (leave them out for a real client install)
+const DEMO_EMAIL = import.meta.env.VITE_DEMO_EMAIL || '';
+const DEMO_PASSWORD = import.meta.env.VITE_DEMO_PASSWORD || '';
 const ALLOW_SIGNUP = import.meta.env.VITE_ALLOW_SIGNUP === 'true'; // accounts are normally created by invitation
 
 export default function Login() {
   const { user, loading, signIn, signUp } = useAuth();
   const [mode, setMode] = useState('signin');
-  // Optional prefill for demo/dev, set VITE_DEMO_EMAIL / VITE_DEMO_PASSWORD in .env.local
-  const [email, setEmail] = useState(import.meta.env.VITE_DEMO_EMAIL || '');
-  const [password, setPassword] = useState(import.meta.env.VITE_DEMO_PASSWORD || '');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
@@ -41,6 +43,13 @@ export default function Login() {
     setBusy(false);
     if (err) return setError(err.message);
     if (mode === 'signup' && !data.session) setInfo('Account created. Check your email to confirm, then sign in.');
+  };
+
+  const demo = async () => {
+    setError(''); setInfo(''); setBusy(true);
+    const { error: err } = await signIn(DEMO_EMAIL, DEMO_PASSWORD);
+    setBusy(false);
+    if (err) setError(err.message);
   };
 
   return (
@@ -69,6 +78,12 @@ export default function Login() {
         <button type="submit" disabled={busy} style={{ padding: '9px', background: '#0289f7', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '13px', fontWeight: 500, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1 }}>
           {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : 'Create account'}
         </button>
+
+        {DEMO_EMAIL && DEMO_PASSWORD && mode === 'signin' && (
+          <button type="button" data-testid="demo-login" onClick={demo} disabled={busy} style={{ padding: '9px', background: 'transparent', color: '#f8f8f8', border: '1px solid #2b2b2b', borderRadius: '6px', fontSize: '13px', fontWeight: 500, cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.7 : 1 }}>
+            Try the demo
+          </button>
+        )}
 
         {ALLOW_SIGNUP && <button type="button" onClick={() => { setMode(mode === 'signin' ? 'signup' : 'signin'); setError(''); setInfo(''); }} style={{ background: 'none', border: 'none', color: '#7c7c7c', fontSize: '12px', cursor: 'pointer' }}>
           {mode === 'signin' ? 'No account? Sign up' : 'Have an account? Sign in'}
